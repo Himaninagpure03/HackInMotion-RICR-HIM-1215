@@ -2,5 +2,8 @@ fastapi
 uvicorn[standard]
 sqlalchemy
 pydantic-settings
+psycopg2-binary
 pyjwt[crypto]
 python-dotenv
+python-dateutil
+python-multipart
