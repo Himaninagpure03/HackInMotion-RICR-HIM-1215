@@ -6,6 +6,8 @@ from .categories.router import router as categories_router
 from .categories.seed import seed_categories
 from .core.config import settings
 from .core.database import Base, SessionLocal, engine
+from .transactions import models as transaction_models  # noqa: F401
+from .transactions.router import router as transactions_router
 from .users import models as user_models  # noqa: F401
 from .users.router import router as users_router
 
@@ -26,6 +28,8 @@ app.add_middleware(
 
 app.include_router(users_router)
 app.include_router(categories_router)
+app.include_router(transactions_router)
+
 
 @app.get("/health")
 def health():
