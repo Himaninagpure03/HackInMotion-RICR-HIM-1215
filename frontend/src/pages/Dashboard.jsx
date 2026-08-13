@@ -1,183 +1,183 @@
 import { useEffect, useState } from "react";
 import { useUser } from "@clerk/clerk-react";
 import { useApi } from "../lib/api";
+import { formatCurrency, formatDate } from "../lib/format";
 
-const styles = {
-  page: {
-    minHeight: "100vh",
-    display: "flex",
-    alignItems: "center",
-    justifyContent: "center",
-    padding: "2rem 1rem",
-    background: "linear-gradient(160deg, #f8fafc 0%, #eef2f7 100%)",
-  },
-  card: {
-    width: "100%",
-    maxWidth: 560,
-    background: "#ffffff",
-    borderRadius: 20,
-    boxShadow: "0 20px 50px -20px rgba(15, 23, 42, 0.25)",
-    padding: "2.25rem 2.5rem",
-  },
-  header: {
-    display: "flex",
-    alignItems: "center",
-    gap: "1rem",
-    marginBottom: "1.75rem",
-  },
-  avatar: {
-    width: 52,
-    height: 52,
-    borderRadius: "50%",
-    display: "flex",
-    alignItems: "center",
-    justifyContent: "center",
-    background: "linear-gradient(135deg, #6366f1, #8b5cf6)",
-    color: "#ffffff",
-    fontWeight: 600,
-    fontSize: "1.25rem",
-    flexShrink: 0,
-  },
-  title: {
-    margin: 0,
-    fontSize: "1.5rem",
-    fontWeight: 700,
-    color: "#0f172a",
-  },
-  subtitle: {
-    margin: "0.15rem 0 0",
-    fontSize: "0.9rem",
-    color: "#64748b",
-  },
-  sectionLabel: {
-    margin: "0 0 0.75rem",
-    fontSize: "0.72rem",
-    fontWeight: 600,
-    textTransform: "uppercase",
-    letterSpacing: "0.08em",
-    color: "#94a3b8",
-  },
-  details: {
-    border: "1px solid #e2e8f0",
-    borderRadius: 12,
-    overflow: "hidden",
-  },
-  row: {
-    display: "flex",
-    justifyContent: "space-between",
-    alignItems: "center",
-    padding: "0.9rem 1.1rem",
-    background: "#ffffff",
-  },
-  rowAlt: {
-    background: "#f8fafc",
-  },
-  rowBorder: {
-    borderBottom: "1px solid #e2e8f0",
-  },
-  key: {
-    fontSize: "0.85rem",
-    color: "#64748b",
-  },
-  value: {
-    fontSize: "0.85rem",
-    fontWeight: 600,
-    color: "#0f172a",
-  },
-  loading: {
-    display: "flex",
-    flexDirection: "column",
-    gap: "0.75rem",
-  },
-  skeleton: {
-    height: 44,
-    borderRadius: 12,
-    background: "linear-gradient(90deg, #eef2f7 25%, #e2e8f0 50%, #eef2f7 75%)",
-    backgroundSize: "200% 100%",
-    animation: "dashboard-shimmer 1.4s infinite",
-  },
-  error: {
-    display: "flex",
-    gap: "0.75rem",
-    alignItems: "flex-start",
-    background: "#fef2f2",
-    border: "1px solid #fecaca",
-    color: "#b91c1c",
-    borderRadius: 12,
-    padding: "0.9rem 1.1rem",
-    fontSize: "0.9rem",
-  },
-};
+function greeting() {
+  const hour = new Date().getHours();
+  if (hour < 12) return "Good morning";
+  if (hour < 18) return "Good afternoon";
+  return "Good evening";
+}
+
+function initialsOf(user) {
+  return (user?.firstName?.[0] ?? "?") + (user?.lastName?.[0] ?? "");
+}
 
 export default function Dashboard() {
   const { user } = useUser();
   const api = useApi();
+
   const [profile, setProfile] = useState(null);
+  const [transactions, setTransactions] = useState([]);
+  const [categoryNames, setCategoryNames] = useState({});
+  const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
   useEffect(() => {
-    api("/me")
-      .then(setProfile)
-      .catch((err) => setError(err.message));
+    (async () => {
+      try {
+        const [me, txns, cats] = await Promise.all([
+          api("/me"),
+          api("/transactions"),
+          api("/categories"),
+        ]);
+        setProfile(me);
+        setTransactions(txns);
+        const map = {};
+        cats.forEach((c) => (map[c.id] = c.name));
+        setCategoryNames(map);
+      } catch (err) {
+        setError(err.message);
+      } finally {
+        setLoading(false);
+      }
+    })();
   }, []);
 
-  const initials = (user?.firstName?.[0] ?? "?") + (user?.lastName?.[0] ?? "");
+  const income = transactions
+    .filter((t) => Number(t.amount) > 0)
+    .reduce((sum, t) => sum + Number(t.amount), 0);
+  const expenses = transactions
+    .filter((t) => Number(t.amount) < 0)
+    .reduce((sum, t) => sum + Math.abs(Number(t.amount)), 0);
+  const balance = income - expenses;
+
+  const byCategory = {};
+  transactions.forEach((t) => {
+    if (Number(t.amount) >= 0) return;
+    const name = categoryNames[t.category_id] ?? "Uncategorized";
+    byCategory[name] = (byCategory[name] ?? 0) + Math.abs(Number(t.amount));
+  });
+  const topCategories = Object.entries(byCategory)
+    .map(([name, total]) => ({ name, total }))
+    .sort((a, b) => b.total - a.total)
+    .slice(0, 5);
+  const maxCategory = topCategories[0]?.total ?? 0;
+
+  const recent = transactions.slice(0, 6);
   const memberSince = profile
     ? new Date(profile.created_at).toLocaleDateString(undefined, {
         year: "numeric",
         month: "long",
-        day: "numeric",
       })
     : null;
 
   return (
-    <main style={styles.page}>
-      <style>{`@keyframes dashboard-shimmer { 0% { background-position: 200% 0; } 100% { background-position: -200% 0; } }`}</style>
-      <section style={styles.card}>
-        <header style={styles.header}>
-          <div style={styles.avatar}>{initials}</div>
-          <div>
-            <h1 style={styles.title}>Welcome back, {user?.firstName ?? "there"}</h1>
-            <p style={styles.subtitle}>Here’s your account overview</p>
-          </div>
-        </header>
+    <main className="page">
+      <header className="dash-head">
+        <div className="avatar">{initialsOf(user)}</div>
+        <div style={{ minWidth: 0 }}>
+          <p className="dash-greet">{greeting()}</p>
+          <h1>{user?.firstName ?? "there"}</h1>
+          <p className="dash-meta">
+            {profile?.email}
+            {profile && memberSince ? ` · Member since ${memberSince}` : ""}
+          </p>
+        </div>
+      </header>
 
-        {error && (
-          <div style={styles.error}>
-            <span>⚠</span>
-            <span>Couldn’t load your profile: {error}</span>
-          </div>
-        )}
+      {error && (
+        <div className="alert">
+          <span>⚠</span>
+          <span>Couldn’t load your dashboard: {error}</span>
+        </div>
+      )}
 
-        {!error && !profile && (
-          <div style={styles.loading}>
-            <div style={styles.skeleton} />
-            <div style={styles.skeleton} />
-          </div>
-        )}
+      {loading && (
+        <div className="skeleton-stack">
+          <div className="skeleton skeleton-stats" />
+          <div className="skeleton skeleton-block" />
+        </div>
+      )}
 
-        {profile && (
-          <>
-            <p style={styles.sectionLabel}>Profile</p>
-            <div style={styles.details}>
-              <div style={{ ...styles.row, ...styles.rowBorder }}>
-                <span style={styles.key}>Email</span>
-                <span style={styles.value}>{profile.email ?? "—"}</span>
-              </div>
-              <div style={{ ...styles.row, ...styles.rowBorder, ...styles.rowAlt }}>
-                <span style={styles.key}>Display name</span>
-                <span style={styles.value}>{profile.display_name ?? "—"}</span>
-              </div>
-              <div style={styles.row}>
-                <span style={styles.key}>Member since</span>
-                <span style={styles.value}>{memberSince}</span>
-              </div>
+      {!loading && (
+        <>
+          <section className="stats-grid">
+            <div className="card stat-card">
+              <p className="stat-label">Balance</p>
+              <p className={`stat-value ${balance < 0 ? "stat-neg" : ""}`}>
+                {formatCurrency(balance, 0)}
+              </p>
+              <p className="stat-sub">
+                {transactions.length} transaction{transactions.length === 1 ? "" : "s"}
+              </p>
             </div>
-          </>
-        )}
+            <div className="card stat-card">
+              <p className="stat-label">Income</p>
+              <p className="stat-value stat-pos">{formatCurrency(income, 0)}</p>
+              <p className="stat-sub">Money in</p>
+            </div>
+            <div className="card stat-card">
+              <p className="stat-label">Spent</p>
+              <p className="stat-value">{formatCurrency(expenses, 0)}</p>
+              <p className="stat-sub">Money out</p>
+            </div>
+          </section>
 
-        {/* Transactions, budgets, and the health score dashboard slot in below */}
-      </section>
+          <section className="dash-grid">
+            <div className="card panel">
+              <h2 className="panel-title">Spending by category</h2>
+              {topCategories.length === 0 ? (
+                <p className="state">No expenses yet.</p>
+              ) : (
+                <div className="cat-list">
+                  {topCategories.map((c) => (
+                    <div key={c.name}>
+                      <div className="cat-row">
+                        <span className="cat-name">{c.name}</span>
+                        <span className="cat-amount">{formatCurrency(c.total)}</span>
+                      </div>
+                      <div className="cat-track">
+                        <div
+                          className="cat-fill"
+                          style={{ width: `${(c.total / maxCategory) * 100}%` }}
+                        />
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+
+            <div className="card panel">
+              <h2 className="panel-title">Recent activity</h2>
+              {recent.length === 0 ? (
+                <p className="state">No transactions yet. Add one in Transactions.</p>
+              ) : (
+                <ul className="txn-list">
+                  {recent.map((t) => {
+                    const amount = Number(t.amount);
+                    return (
+                      <li key={t.id} className="txn-row">
+                        <div className="txn-main">
+                          <p className="txn-desc">{t.description}</p>
+                          <p className="txn-date">{formatDate(t.txn_date)}</p>
+                        </div>
+                        <span
+                          className={`txn-amount ${amount < 0 ? "amount-neg" : "amount-pos"}`}
+                        >
+                          {formatCurrency(amount)}
+                        </span>
+                      </li>
+                    );
+                  })}
+                </ul>
+              )}
+            </div>
+          </section>
+        </>
+      )}
     </main>
   );
 }
