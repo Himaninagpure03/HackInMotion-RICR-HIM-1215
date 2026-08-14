@@ -6,7 +6,7 @@ export default function Transactions() {
   const api = useApi();
 
   const [transactions, setTransactions] = useState([]);
-  const [categoryNames, setCategoryNames] = useState({});
+  const [categories, setCategories] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
@@ -18,9 +18,7 @@ export default function Transactions() {
     try {
       const [txns, cats] = await Promise.all([api("/transactions"), api("/categories")]);
       setTransactions(txns);
-      const map = {};
-      cats.forEach((c) => (map[c.id] = c.name));
-      setCategoryNames(map);
+      setCategories(cats);
       setError(null);
     } catch (err) {
       setError(err.message);
@@ -44,6 +42,22 @@ export default function Transactions() {
       });
       setForm({ amount: "", txn_date: "", description: "" });
       await loadData();
+    } catch (err) {
+      setError(err.message);
+    }
+  }
+
+  async function handleCategoryChange(txnId, value) {
+    const categoryId = value === "" ? null : Number(value);
+    try {
+      const updated = await api(`/transactions/${txnId}`, {
+        method: "PATCH",
+        body: JSON.stringify({ category_id: categoryId }),
+      });
+      setTransactions((prev) =>
+        prev.map((t) => (t.id === txnId ? { ...t, category_id: updated.category_id } : t))
+      );
+      setError(null);
     } catch (err) {
       setError(err.message);
     }
@@ -178,19 +192,25 @@ export default function Transactions() {
               <tbody>
                 {transactions.map((t) => {
                   const amount = Number(t.amount);
-                  const category = categoryNames[t.category_id];
                   return (
                     <tr key={t.id}>
-                      <td>{formatDate(t.txn_date)}</td>
-                      <td>{t.description}</td>
-                      <td>
-                        {category ? (
-                          <span className="badge">{category}</span>
-                        ) : (
-                          <span className="badge badge-muted">Uncategorized</span>
-                        )}
+                      <td data-label="Date">{formatDate(t.txn_date)}</td>
+                      <td data-label="Description">{t.description}</td>
+                      <td data-label="Category">
+                        <select
+                          className="input"
+                          value={t.category_id == null ? "" : String(t.category_id)}
+                          onChange={(e) => handleCategoryChange(t.id, e.target.value)}
+                        >
+                          <option value="">Uncategorized</option>
+                          {categories.map((c) => (
+                            <option key={c.id} value={c.id}>
+                              {c.name}
+                            </option>
+                          ))}
+                        </select>
                       </td>
-                      <td className={`right ${amount < 0 ? "amount-neg" : "amount-pos"}`}>
+                      <td data-label="Amount" className={`right ${amount < 0 ? "amount-neg" : "amount-pos"}`}>
                         {formatCurrency(amount)}
                       </td>
                     </tr>
