@@ -28,6 +28,14 @@ export default function Accounts() {
     last_four_digits: "",
   });
 
+  const [editingId, setEditingId] = useState(null);
+  const [editForm, setEditForm] = useState({
+    name: "",
+    type: "checking",
+    institution: "",
+    last_four_digits: "",
+  });
+
   async function loadData() {
     try {
       const list = await api("/accounts");
@@ -62,6 +70,55 @@ export default function Accounts() {
         body: JSON.stringify(payload),
       });
       setForm({ name: "", type: "checking", institution: "", last_four_digits: "" });
+      await loadData();
+    } catch (err) {
+      setError(err.message);
+    }
+  }
+
+  function startEdit(account) {
+    setEditingId(account.id);
+    setEditForm({
+      name: account.name,
+      type: account.type,
+      institution: account.institution ?? "",
+      last_four_digits: account.last_four_digits ?? "",
+    });
+  }
+
+  function cancelEdit() {
+    setEditingId(null);
+  }
+
+  async function handleSaveEdit(e, id) {
+    e.preventDefault();
+
+    const payload = {
+      name: editForm.name.trim(),
+      type: editForm.type,
+      institution: editForm.institution.trim() || null,
+      last_four_digits: editForm.last_four_digits.trim() || null,
+    };
+
+    try {
+      await api(`/accounts/${id}`, {
+        method: "PATCH",
+        body: JSON.stringify(payload),
+      });
+      setEditingId(null);
+      await loadData();
+    } catch (err) {
+      setError(err.message);
+    }
+  }
+
+  async function handleDelete(id) {
+    if (!window.confirm("Delete this account? Its transactions will be kept but unassigned.")) {
+      return;
+    }
+    try {
+      await api(`/accounts/${id}`, { method: "DELETE" });
+      setError(null);
       await loadData();
     } catch (err) {
       setError(err.message);
@@ -161,29 +218,115 @@ export default function Accounts() {
                   <th>Type</th>
                   <th>Institution</th>
                   <th className="right">Last four</th>
+                  <th className="right">Actions</th>
                 </tr>
               </thead>
               <tbody>
-                {accounts.map((a) => (
-                  <tr key={a.id}>
-                    <td data-label="Name">{a.name}</td>
-                    <td data-label="Type">
-                      <span className={a.type === "credit_card" ? "badge" : "badge badge-muted"}>
-                        {typeLabel(a.type)}
-                      </span>
-                    </td>
-                    <td data-label="Institution">
-                      {a.institution ?? <span style={{ color: "var(--text-faint)" }}>—</span>}
-                    </td>
-                    <td data-label="Last four" className="right">
-                      {a.last_four_digits ? (
-                        <span style={{ fontVariantNumeric: "tabular-nums" }}>•••• {a.last_four_digits}</span>
-                      ) : (
-                        <span style={{ color: "var(--text-faint)" }}>—</span>
-                      )}
-                    </td>
-                  </tr>
-                ))}
+                {accounts.map((a) => {
+                  const isEditing = a.id === editingId;
+                  return (
+                    <tr key={a.id}>
+                      <td data-label="Name">
+                        {isEditing ? (
+                          <input
+                            className="input"
+                            type="text"
+                            value={editForm.name}
+                            onChange={(e) => setEditForm({ ...editForm, name: e.target.value })}
+                            required
+                          />
+                        ) : (
+                          a.name
+                        )}
+                      </td>
+                      <td data-label="Type">
+                        {isEditing ? (
+                          <select
+                            className="input"
+                            value={editForm.type}
+                            onChange={(e) => setEditForm({ ...editForm, type: e.target.value })}
+                          >
+                            {ACCOUNT_TYPES.map((t) => (
+                              <option key={t.value} value={t.value}>
+                                {t.label}
+                              </option>
+                            ))}
+                          </select>
+                        ) : (
+                          <span className={a.type === "credit_card" ? "badge" : "badge badge-muted"}>
+                            {typeLabel(a.type)}
+                          </span>
+                        )}
+                      </td>
+                      <td data-label="Institution">
+                        {isEditing ? (
+                          <input
+                            className="input"
+                            type="text"
+                            value={editForm.institution}
+                            onChange={(e) => setEditForm({ ...editForm, institution: e.target.value })}
+                          />
+                        ) : (
+                          a.institution ?? <span style={{ color: "var(--text-faint)" }}>—</span>
+                        )}
+                      </td>
+                      <td data-label="Last four" className="right">
+                        {isEditing ? (
+                          <input
+                            className="input"
+                            type="text"
+                            inputMode="numeric"
+                            maxLength="4"
+                            pattern="[0-9]*"
+                            value={editForm.last_four_digits}
+                            onChange={(e) =>
+                              setEditForm({
+                                ...editForm,
+                                last_four_digits: e.target.value.replace(/\D/g, ""),
+                              })
+                            }
+                            title="Last 4 digits of the account number"
+                          />
+                        ) : a.last_four_digits ? (
+                          <span style={{ fontVariantNumeric: "tabular-nums" }}>
+                            •••• {a.last_four_digits}
+                          </span>
+                        ) : (
+                          <span style={{ color: "var(--text-faint)" }}>—</span>
+                        )}
+                      </td>
+                      <td data-label="Actions" className="right">
+                        {isEditing ? (
+                          <span className="row-actions">
+                            <button
+                              type="button"
+                              className="btn btn-primary btn-sm"
+                              onClick={(e) => handleSaveEdit(e, a.id)}
+                            >
+                              Save
+                            </button>
+                            <button type="button" className="btn btn-ghost btn-sm" onClick={cancelEdit}>
+                              Cancel
+                            </button>
+                          </span>
+                        ) : (
+                          <span className="row-actions">
+                            <button type="button" className="btn btn-ghost btn-sm" onClick={() => startEdit(a)}>
+                              Edit
+                            </button>
+                            <button
+                              type="button"
+                              className="btn btn-danger btn-sm"
+                              onClick={() => handleDelete(a.id)}
+                            >
+                              Delete
+                            </button>
+                          </span>
+                        )}
+                      </td>
+                    </tr>
+                  );
+                })}
               </tbody>
             </table>
           </div>
