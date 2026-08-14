@@ -5,7 +5,7 @@ class Settings(BaseSettings):
     clerk_issuer: str
     clerk_secret_key: str | None = None
     clerk_jwks_url: str | None = None  # override only if your JWKS lives elsewhere
-    database_url: str = "postgresql://finance:finance@localhost:5433/finance"
+    database_url: str = "postgresql://finhealth:pickett@localhost:5432/fintech"
     cors_origins: list[str] = ["http://localhost:5173"]
 
     model_config = SettingsConfigDict(env_file=".env", env_file_encoding="utf-8")
