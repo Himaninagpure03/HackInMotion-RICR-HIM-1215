@@ -13,6 +13,7 @@ class TransactionCreate(BaseModel):
 
 class TransactionUpdate(BaseModel):
     category_id: int | None = None
+    account_id: int | None = None
 
 
 class TransactionOut(BaseModel):

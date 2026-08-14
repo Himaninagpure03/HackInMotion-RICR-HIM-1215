@@ -10,7 +10,7 @@ be swapped for a model or API later without touching callers.
 """
 
 CATEGORY_KEYWORDS: dict[str, list[str]] = {
-    "Food": ["swiggy", "zomato", "restaurant", "cafe", "dominos", "mcdonald", "kfc"],
+    "Food": ["food", "swiggy", "zomato", "restaurant", "cafe", "dominos", "mcdonald", "kfc"],
     "Groceries": ["bigbasket", "blinkit", "zepto", "grocery", "supermarket", "dmart"],
     "Rent": ["rent", "landlord"],
     "Subscriptions": ["netflix", "spotify", "prime video", "hotstar", "youtube premium", "icloud"],
