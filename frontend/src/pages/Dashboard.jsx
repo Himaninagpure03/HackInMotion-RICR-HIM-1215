@@ -17,8 +17,8 @@ import {
 import { useApi } from "../lib/api";
 
 const CATEGORY_COLORS = [
-  "#2563eb", "#059669", "#d97706", "#dc2626", "#7c3aed",
-  "#0891b2", "#65a30d", "#c026d3", "#e11d48", "#4b5563",
+  "#2f5d8c", "#123a63", "#0e7490", "#1f7a46", "#6d4ba1",
+  "#c4003b", "#b45309", "#5b9bd5", "#9a3412", "#7c8fa6",
 ];
 
 const MONTHS = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
@@ -26,9 +26,9 @@ const MONTHS = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "
 const CARD_STYLE = {
   background: "var(--surface)",
   border: "1px solid var(--border)",
-  borderRadius: 12,
-  padding: "1rem",
-  boxShadow: "0 1px 3px rgba(0,0,0,0.3)",
+  borderRadius: 10,
+  padding: "0.9rem",
+  boxShadow: "0 1px 2px rgba(11,31,59,0.05), 0 1px 3px rgba(11,31,59,0.06)",
 };
 
 const AXIS_TICK = { fill: "var(--text-muted)", fontSize: 11 };
@@ -44,8 +44,8 @@ const CARD_TITLE = { fontSize: "0.92rem", marginTop: 0, marginBottom: "0.75rem" 
 
 const money = (v) => `\u20b9${Number(v).toLocaleString()}`;
 
-const INCOME_GRADIENT = ["#2dd4bf", "#34d399"];
-const EXPENSE_GRADIENT = ["#fb7185", "#f43f5e"];
+const INCOME_GRADIENT = ["#4caf7d", "#1f7a46"];
+const EXPENSE_GRADIENT = ["#e2547d", "#c4003b"];
 
 const currentMonth = () => {
   const d = new Date();
@@ -58,7 +58,7 @@ function ScoreRing({ score }) {
   const r = (size - stroke) / 2;
   const c = 2 * Math.PI * r;
   const pct = Math.max(0, Math.min(score, 100));
-  const color = pct >= 70 ? "#34d399" : pct >= 40 ? "#fbbf24" : "#f87171";
+  const color = pct >= 70 ? "#1f7a46" : pct >= 40 ? "#b45309" : "#c4003b";
   return (
     <svg width={size} height={size} viewBox={`0 0 ${size} ${size}`}>
       <circle
@@ -176,19 +176,19 @@ function StatsRow({ health }) {
   const saved = income - expenses;
   return (
     <div className="stats-grid stats-grid-4">
-      <StatCard label="Total income" value={money(income)} sub="All time" tone={income > 0 ? "var(--accent)" : undefined} />
+      <StatCard label="Total income" value={money(income)} sub="All time" tone={income > 0 ? "var(--positive)" : undefined} />
       <StatCard label="Total expenses" value={money(expenses)} sub="All time" tone={expenses > 0 ? "var(--danger)" : undefined} />
       <StatCard
         label="Saved"
         value={money(Math.max(saved, 0))}
         sub="Income minus expenses"
-        tone={saved >= 0 ? "var(--accent)" : "var(--danger)"}
+        tone={saved >= 0 ? "var(--positive)" : "var(--danger)"}
       />
       <StatCard
         label="Savings rate"
         value={`${health.savings_rate}%`}
         sub={saved >= 0 ? "of income kept" : "spending more than earned"}
-        tone={health.savings_rate >= 20 ? "var(--accent)" : health.savings_rate >= 0 ? undefined : "var(--danger)"}
+        tone={health.savings_rate >= 20 ? "var(--positive)" : health.savings_rate >= 0 ? undefined : "var(--danger)"}
       />
     </div>
   );
@@ -232,7 +232,7 @@ function RecentTransactions({ transactions, categoryNames }) {
             </div>
             <span
               className="txn-amount"
-              style={{ color: negative ? "var(--danger)" : "var(--accent)" }}
+              style={{ color: negative ? "var(--danger)" : "var(--positive)" }}
             >
               {negative ? "\u2212" : "+"}
               {money(Math.abs(t.amount))}
@@ -265,11 +265,11 @@ function SavingsNote({ income, expenses, savingsRate }) {
         ? `Warning \u2014 you spent ${money(Math.abs(saved))} more than you earned this period (${savingsRate}% savings).`
         : `Low savings \u2014 you're keeping only ${savingsRate}% of your income (${money(saved)}). Aim for at least 20%.`;
   } else if (savingsRate >= 20) {
-    style = { background: "var(--accent-dim)", border: "1px solid rgba(52,211,153,0.25)" };
+    style = { background: "var(--positive-dim)", border: "1px solid rgba(31,122,70,0.25)" };
     icon = "\ud83d\udc4c";
     text = `Excellent \u2014 you saved ${savingsRate}% of your income this period (${money(saved)}).`;
   } else {
-    style = { background: "var(--accent-dim)", border: "1px solid rgba(52,211,153,0.25)" };
+    style = { background: "var(--positive-dim)", border: "1px solid rgba(31,122,70,0.25)" };
     icon = "\ud83d\udc4d";
     text = `Good \u2014 you saved ${savingsRate}% of your income this period (${money(saved)}).`;
   }
@@ -312,9 +312,9 @@ function SavingsBreakdownChart({ income, expenses, savingsRate }) {
   ];
 
   const rows = [
-    { label: "Income", value: totalIncome, pct: 100, color: "#34d399" },
-    { label: "Expenses", value: Math.max(totalExpenses, 0), pct: expensesPct, color: "#fb7185" },
-    { label: "Saved", value: Math.max(saved, 0), pct: savingsRate, color: "#2dd4bf" },
+    { label: "Income", value: totalIncome, pct: 100, color: "#1f7a46" },
+    { label: "Expenses", value: Math.max(totalExpenses, 0), pct: expensesPct, color: "#c4003b" },
+    { label: "Saved", value: Math.max(saved, 0), pct: savingsRate, color: "#4caf7d" },
   ];
 
   return (
@@ -324,12 +324,12 @@ function SavingsBreakdownChart({ income, expenses, savingsRate }) {
           <PieChart>
             <defs>
               <linearGradient id="gradPieSavings" x1="0" y1="0" x2="1" y2="1">
-                <stop offset="0%" stopColor="#2dd4bf" />
-                <stop offset="100%" stopColor="#34d399" />
+                <stop offset="0%" stopColor="#4caf7d" />
+                <stop offset="100%" stopColor="#1f7a46" />
               </linearGradient>
               <linearGradient id="gradPieExpenses" x1="0" y1="0" x2="1" y2="1">
-                <stop offset="0%" stopColor="#fb7185" />
-                <stop offset="100%" stopColor="#f43f5e" />
+                <stop offset="0%" stopColor="#e2547d" />
+                <stop offset="100%" stopColor="#c4003b" />
               </linearGradient>
             </defs>
             <Pie
@@ -370,7 +370,7 @@ function SavingsBreakdownChart({ income, expenses, savingsRate }) {
             style={{
               fontSize: "1.35rem",
               fontWeight: 700,
-              color: savingsRate >= 0 ? "var(--accent)" : "var(--danger)",
+              color: savingsRate >= 0 ? "var(--positive)" : "var(--danger)",
               fontVariantNumeric: "tabular-nums",
             }}
           >
@@ -562,14 +562,14 @@ function MonthlyTrendChart({ data }) {
         </BarChart>
       </ResponsiveContainer>
       <div style={{ display: "flex", gap: "1.25rem", justifyContent: "center", marginTop: "0.5rem" }}>
-        <span style={{ display: "inline-flex", alignItems: "center", gap: "0.4rem", fontSize: "0.78rem", color: "var(--text-muted)" }}>
-          <span style={{ width: 9, height: 9, borderRadius: 3, background: "linear-gradient(135deg, #2dd4bf, #34d399)" }} />
-          Income
-        </span>
-        <span style={{ display: "inline-flex", alignItems: "center", gap: "0.4rem", fontSize: "0.78rem", color: "var(--text-muted)" }}>
-          <span style={{ width: 9, height: 9, borderRadius: 3, background: "linear-gradient(135deg, #fb7185, #f43f5e)" }} />
-          Expenses
-        </span>
+          <span style={{ display: "inline-flex", alignItems: "center", gap: "0.4rem", fontSize: "0.78rem", color: "var(--text-muted)" }}>
+          <span style={{ width: 9, height: 9, borderRadius: 3, background: "linear-gradient(135deg, #4caf7d, #1f7a46)" }} />
+            Income
+          </span>
+          <span style={{ display: "inline-flex", alignItems: "center", gap: "0.4rem", fontSize: "0.78rem", color: "var(--text-muted)" }}>
+            <span style={{ width: 9, height: 9, borderRadius: 3, background: "linear-gradient(135deg, #e2547d, #c4003b)" }} />
+            Expenses
+          </span>
       </div>
     </>
   );
@@ -585,7 +585,7 @@ function BudgetStatus({ budget }) {
   }
 
   if (budget.status === "reached")
-    return <span style={{ color: "var(--accent)", fontWeight: 600 }}>Goal reached</span>;
+    return <span style={{ color: "var(--positive)", fontWeight: 600 }}>Goal reached</span>;
   return <span style={{ color: "var(--text-faint)" }}>{money(Math.max(diff, 0))} to go</span>;
 }
 
@@ -605,11 +605,11 @@ function BudgetsList({ budgets, categoryNames }) {
         const barColor =
           b.kind === "spending_limit"
             ? b.status === "over"
-              ? "#dc2626"
-              : "#2563eb"
+              ? "#c4003b"
+              : "#2f5d8c"
             : b.status === "reached"
-              ? "#059669"
-              : "#d97706";
+              ? "#1f7a46"
+              : "#b45309";
         const label =
           (b.kind === "spending_limit" ? "Spending limit" : "Savings goal") +
           (b.category_id ? ` \u00b7 ${categoryNames.get(b.category_id) ?? "Category"}` : " \u00b7 Overall");
@@ -745,6 +745,68 @@ function BudgetsSection({ budgets, categories, categoryNames, onCreated }) {
   );
 }
 
+function BillStatusBadge({ bill }) {
+  const { reminder_status, days_left } = bill;
+  if (reminder_status === "OVERDUE") {
+    return <span className="badge badge-danger">Overdue by {-days_left}d</span>;
+  }
+  if (reminder_status === "DUE_SOON") {
+    return (
+      <span className="badge badge-warning">
+        {days_left === 0 ? "Due today" : `Due in ${days_left}d`}
+      </span>
+    );
+  }
+  return <span className="badge badge-muted">Due in {days_left}d</span>;
+}
+
+function BillsCard({ bills, onMarkPaid }) {
+  const total = bills.reduce((sum, b) => sum + Number(b.amount), 0);
+
+  return (
+    <div style={CARD_STYLE}>
+      <div className="bill-head">
+        <h2 style={CARD_TITLE}>Upcoming bills</h2>
+        {bills.length > 0 && (
+          <span className="bill-total">
+            {bills.length} due · {money(total)}
+          </span>
+        )}
+      </div>
+
+      {bills.length === 0 ? (
+        <p style={{ color: "var(--text-muted)", fontSize: "0.88rem", margin: "0.25rem 0" }}>
+          Nothing due in the next 30 days.
+        </p>
+      ) : (
+        <ul className="bill-list">
+          {bills.map((b) => (
+            <li key={b.id} className="bill-row">
+              <div className="bill-main">
+                <p className="bill-name">{b.name}</p>
+                <p className="bill-due">
+                  <span style={{ fontVariantNumeric: "tabular-nums" }}>
+                    {formatShortDate(b.due_date)}
+                  </span>
+                  <BillStatusBadge bill={b} />
+                </p>
+              </div>
+              <span className="bill-amount">{money(b.amount)}</span>
+              <button
+                type="button"
+                className="btn btn-ghost btn-sm"
+                onClick={() => onMarkPaid(b.id)}
+              >
+                Mark paid
+              </button>
+            </li>
+          ))}
+        </ul>
+      )}
+    </div>
+  );
+}
+
 export default function Dashboard() {
   const { user } = useUser();
   const api = useApi();
@@ -753,16 +815,18 @@ export default function Dashboard() {
   const [budgets, setBudgets] = useState([]);
   const [categories, setCategories] = useState([]);
   const [transactions, setTransactions] = useState([]);
+  const [bills, setBills] = useState([]);
   const [error, setError] = useState(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    Promise.all([api("/analytics/dashboard"), api("/budgets"), api("/categories"), api("/transactions")])
-      .then(([dash, budgetList, catList, txnList]) => {
+    Promise.all([api("/analytics/dashboard"), api("/budgets"), api("/categories"), api("/transactions"), api("/bills/upcoming")])
+      .then(([dash, budgetList, catList, txnList, billList]) => {
         setDashboard(dash);
         setBudgets(budgetList);
         setCategories(catList);
         setTransactions(txnList);
+        setBills(billList);
       })
       .catch((err) => setError(err.message))
       .finally(() => setLoading(false));
@@ -784,9 +848,32 @@ export default function Dashboard() {
     }
   }
 
+  async function handleBillPaid(billId) {
+    try {
+      await api(`/bills/${billId}`, {
+        method: "PATCH",
+        body: JSON.stringify({ status: "PAID" }),
+      });
+      const billList = await api("/bills/upcoming");
+      setBills(billList);
+      setError(null);
+    } catch (err) {
+      setError(err.message);
+    }
+  }
+
+  const todayLabel = new Date().toLocaleDateString(undefined, {
+    weekday: "long",
+    month: "long",
+    day: "numeric",
+  });
+
   return (
     <main className="dash-page">
-      <h1>Welcome back, {user?.firstName ?? "there"}</h1>
+      <div className="dash-titlebar">
+        <h1>Welcome back, {user?.firstName ?? "there"}</h1>
+        <span className="dash-date">{todayLabel}</span>
+      </div>
 
       {error && <p style={{ color: "var(--danger)", fontSize: "0.88rem" }}>{error}</p>}
       {loading && <p style={{ color: "var(--text-muted)" }}>Loading your dashboard{"\u2026"}</p>}
@@ -800,6 +887,8 @@ export default function Dashboard() {
             expenses={dashboard.health.total_expenses}
             savingsRate={dashboard.health.savings_rate}
           />
+
+          <BillsCard bills={bills} onMarkPaid={handleBillPaid} />
 
           <BudgetsSection
             budgets={budgets}
