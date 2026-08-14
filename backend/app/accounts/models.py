@@ -1,5 +1,8 @@
-from sqlalchemy import Column, Integer, String, DateTime, ForeignKey, func
+from sqlalchemy import Column, DateTime, ForeignKey, Integer, String, func
+
 from ..core.database import Base
+
+
 class Account(Base):
     __tablename__ = "accounts"
     id = Column(Integer, primary_key=True, index=True)

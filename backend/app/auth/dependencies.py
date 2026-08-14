@@ -12,9 +12,9 @@ is purely signature-based against Clerk's public JWKS endpoint.
 """
 
 import jwt
-from jwt import PyJWKClient
 from fastapi import Depends, HTTPException, status
-from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
+from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
+from jwt import PyJWKClient
 
 from ..core.config import settings
 

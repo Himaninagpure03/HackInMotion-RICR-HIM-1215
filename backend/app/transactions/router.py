@@ -48,9 +48,7 @@ def create_transaction(
 
     category_name = categorize(payload.description)
     category = (
-        db.query(Category).filter(Category.name == category_name).first()
-        if category_name
-        else None
+        db.query(Category).filter(Category.name == category_name).first() if category_name else None
     )
 
     txn = Transaction(
