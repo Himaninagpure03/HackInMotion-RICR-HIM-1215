@@ -81,13 +81,14 @@ def list_transactions(
 
 
 @router.patch("/{transaction_id}", response_model=TransactionOut)
-def update_transaction_category(
+def update_transaction(
     transaction_id: int,
     payload: TransactionUpdate,
     user_id: str = Depends(require_local_user),
     db: Session = Depends(get_db),
 ):
-    """Lets a user correct the auto-categorizer's guess on a specific transaction."""
+    """Lets a user correct the auto-categorizer's guess (or the assigned
+    account) on a specific transaction."""
     txn = (
         db.query(Transaction)
         .filter(Transaction.id == transaction_id, Transaction.user_id == user_id)
@@ -96,12 +97,25 @@ def update_transaction_category(
     if not txn:
         raise HTTPException(status_code=404, detail="Transaction not found")
 
-    if payload.category_id is not None:
+    updates = payload.model_dump(exclude_unset=True)
+
+    if updates.get("account_id") is not None:
+        _validate_account(db, user_id, payload.account_id)
+
+    if updates.get("category_id") is not None:
         category = db.query(Category).filter(Category.id == payload.category_id).first()
         if not category:
             raise HTTPException(status_code=404, detail="Category not found")
 
-    txn.category_id = payload.category_id
+    if "category_id" in updates:
+        txn.category_id = payload.category_id
+
+    if "account_id" in updates:
+        txn.account_id = payload.account_id
+        txn.dedupe_hash = compute_dedupe_hash(
+            user_id, txn.txn_date, txn.amount, txn.description, payload.account_id
+        )
+
     db.commit()
     db.refresh(txn)
     return txn
