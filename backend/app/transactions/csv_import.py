@@ -75,7 +75,9 @@ def _parse_amount(raw: str) -> Decimal | None:
         return None
 
 
-def import_transactions_csv(db: Session, user_id: str, file_bytes: bytes) -> ImportResult:
+def import_transactions_csv(
+    db: Session, user_id: str, file_bytes: bytes, account_id: int | None = None
+) -> ImportResult:
     result = ImportResult()
 
     try:
@@ -101,7 +103,8 @@ def import_transactions_csv(db: Session, user_id: str, file_bytes: bytes) -> Imp
 
     # Preload once rather than querying per row: existing hashes (so a
     # re-uploaded statement is skipped) and the category name -> id map
-    # (used by the categorizer output).
+    # (used by the categorizer output). Scoped to this account_id where
+    # relevant since dedup hashes now fold account_id in.
     known_hashes = {
         h for (h,) in db.query(Transaction.dedupe_hash).filter(Transaction.user_id == user_id).all()
     }
@@ -126,7 +129,7 @@ def import_transactions_csv(db: Session, user_id: str, file_bytes: bytes) -> Imp
             result.errors.append(f"Row {i}: unrecognized amount '{raw_amount}', skipped.")
             continue
 
-        dedupe_hash = compute_dedupe_hash(user_id, txn_date, amount, raw_desc)
+        dedupe_hash = compute_dedupe_hash(user_id, txn_date, amount, raw_desc, account_id)
 
         # Checked against known_hashes (updated as we go), not the DB directly —
         # otherwise two duplicate rows within the SAME file wouldn't catch each
@@ -142,6 +145,7 @@ def import_transactions_csv(db: Session, user_id: str, file_bytes: bytes) -> Imp
         db.add(
             Transaction(
                 user_id=user_id,
+                account_id=account_id,
                 category_id=category_id,
                 amount=amount,
                 txn_date=txn_date,

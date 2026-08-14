@@ -8,6 +8,11 @@ class TransactionCreate(BaseModel):
     amount: Decimal
     txn_date: date
     description: str = Field(min_length=1)
+    account_id: int | None = None
+
+
+class TransactionUpdate(BaseModel):
+    category_id: int | None = None
 
 
 class TransactionOut(BaseModel):
@@ -16,6 +21,7 @@ class TransactionOut(BaseModel):
     txn_date: date
     description: str
     category_id: int | None
+    account_id: int | None
     source: str
     created_at: datetime
 

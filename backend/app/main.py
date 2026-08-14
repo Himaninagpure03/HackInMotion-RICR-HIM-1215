@@ -1,7 +1,13 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
-from .categories import models as category_models  # noqa: F401  (registers table before create_all)
+from .accounts import models as account_models  # noqa: F401
+from .accounts.router import router as accounts_router
+from .analytics import models as analytics_models  # noqa: F401
+from .analytics.router import router as analytics_router
+from .budgets import models as budget_models  # noqa: F401
+from .budgets.router import router as budgets_router
+from .categories import models as category_models  # noqa: F401
 from .categories.router import router as categories_router
 from .categories.seed import seed_categories
 from .core.config import settings
@@ -27,8 +33,11 @@ app.add_middleware(
 )
 
 app.include_router(users_router)
+app.include_router(accounts_router)
 app.include_router(categories_router)
 app.include_router(transactions_router)
+app.include_router(budgets_router)
+app.include_router(analytics_router)
 
 
 @app.get("/health")
