@@ -7,18 +7,25 @@ export default function Transactions() {
 
   const [transactions, setTransactions] = useState([]);
   const [categories, setCategories] = useState([]);
+  const [accounts, setAccounts] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
-  const [form, setForm] = useState({ amount: "", txn_date: "", description: "" });
+  const [form, setForm] = useState({ amount: "", txn_date: "", description: "", account_id: "" });
   const [csvFile, setCsvFile] = useState(null);
+  const [csvAccountId, setCsvAccountId] = useState("");
   const [importResult, setImportResult] = useState(null);
 
   async function loadData() {
     try {
-      const [txns, cats] = await Promise.all([api("/transactions"), api("/categories")]);
+      const [txns, cats, accts] = await Promise.all([
+        api("/transactions"),
+        api("/categories"),
+        api("/accounts"),
+      ]);
       setTransactions(txns);
       setCategories(cats);
+      setAccounts(accts);
       setError(null);
     } catch (err) {
       setError(err.message);
@@ -38,10 +45,30 @@ export default function Transactions() {
     try {
       await api("/transactions", {
         method: "POST",
-        body: JSON.stringify(form),
+        body: JSON.stringify({
+          ...form,
+          amount: Number(form.amount),
+          account_id: form.account_id === "" ? null : Number(form.account_id),
+        }),
       });
-      setForm({ amount: "", txn_date: "", description: "" });
+      setForm({ amount: "", txn_date: "", description: "", account_id: "" });
       await loadData();
+    } catch (err) {
+      setError(err.message);
+    }
+  }
+
+  async function handleAccountChange(txnId, value) {
+    const accountId = value === "" ? null : Number(value);
+    try {
+      const updated = await api(`/transactions/${txnId}`, {
+        method: "PATCH",
+        body: JSON.stringify({ account_id: accountId }),
+      });
+      setTransactions((prev) =>
+        prev.map((t) => (t.id === txnId ? { ...t, account_id: updated.account_id } : t))
+      );
+      setError(null);
     } catch (err) {
       setError(err.message);
     }
@@ -69,11 +96,13 @@ export default function Transactions() {
 
     const body = new FormData();
     body.append("file", csvFile);
+    if (csvAccountId !== "") body.append("account_id", csvAccountId);
 
     try {
       const result = await api("/transactions/import", { method: "POST", body });
       setImportResult(result);
       setCsvFile(null);
+      setCsvAccountId("");
       await loadData();
     } catch (err) {
       setError(err.message);
@@ -123,6 +152,18 @@ export default function Transactions() {
             onChange={(e) => setForm({ ...form, description: e.target.value })}
             required
           />
+          <select
+            className="input"
+            value={form.account_id}
+            onChange={(e) => setForm({ ...form, account_id: e.target.value })}
+          >
+            <option value="">No account</option>
+            {accounts.map((a) => (
+              <option key={a.id} value={a.id}>
+                {a.name}
+              </option>
+            ))}
+          </select>
           <button type="submit" className="btn btn-primary">
             Add
           </button>
@@ -141,6 +182,18 @@ export default function Transactions() {
             />
             {csvFile ? csvFile.name : "Choose CSV file"}
           </label>
+          <select
+            className="input"
+            value={csvAccountId}
+            onChange={(e) => setCsvAccountId(e.target.value)}
+          >
+            <option value="">No account</option>
+            {accounts.map((a) => (
+              <option key={a.id} value={a.id}>
+                {a.name}
+              </option>
+            ))}
+          </select>
           <button type="submit" className="btn btn-ghost" disabled={!csvFile}>
             Upload
           </button>
@@ -186,6 +239,7 @@ export default function Transactions() {
                   <th>Date</th>
                   <th>Description</th>
                   <th>Category</th>
+                  <th>Account</th>
                   <th className="right">Amount</th>
                 </tr>
               </thead>
@@ -206,6 +260,20 @@ export default function Transactions() {
                           {categories.map((c) => (
                             <option key={c.id} value={c.id}>
                               {c.name}
+                            </option>
+                          ))}
+                        </select>
+                      </td>
+                      <td data-label="Account">
+                        <select
+                          className="input"
+                          value={t.account_id == null ? "" : String(t.account_id)}
+                          onChange={(e) => handleAccountChange(t.id, e.target.value)}
+                        >
+                          <option value="">No account</option>
+                          {accounts.map((a) => (
+                            <option key={a.id} value={a.id}>
+                              {a.name}
                             </option>
                           ))}
                         </select>
