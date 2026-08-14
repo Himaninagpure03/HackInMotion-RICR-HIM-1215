@@ -3,11 +3,11 @@ services:
     image: postgres:16-alpine
     restart: unless-stopped
     environment:
-      POSTGRES_USER: finance
-      POSTGRES_PASSWORD: finance
-      POSTGRES_DB: finance
+      POSTGRES_USER: finhealth
+      POSTGRES_PASSWORD: pickett
+      POSTGRES_DB: fintech
     ports:
-      - "5433:5432"
+      - "5432:5432"
     volumes:
       - pgdata:/var/lib/postgresql/data
 
