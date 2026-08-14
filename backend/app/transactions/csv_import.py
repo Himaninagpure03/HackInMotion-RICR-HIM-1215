@@ -61,7 +61,7 @@ def _parse_date(raw: str) -> date | None:
             return None
     try:
         return date_parser.parse(raw, dayfirst=True).date()
-    except (ValueError, OverflowError):
+    except ValueError, OverflowError:
         return None
 
 
@@ -108,7 +108,9 @@ def import_transactions_csv(
     known_hashes = {
         h for (h,) in db.query(Transaction.dedupe_hash).filter(Transaction.user_id == user_id).all()
     }
-    category_ids_by_name = {name: cat_id for cat_id, name in db.query(Category.id, Category.name).all()}
+    category_ids_by_name = {
+        name: cat_id for cat_id, name in db.query(Category.id, Category.name).all()
+    }
 
     for i, row in enumerate(reader, start=2):  # row 1 is the header
         raw_date = (row.get(date_col) or "").strip()

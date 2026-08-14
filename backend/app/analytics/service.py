@@ -29,7 +29,11 @@ def category_breakdown(db: Session, user_id: str) -> list[CategoryBreakdown]:
 
 
 def monthly_trend(db: Session, user_id: str) -> list[MonthlyTrendPoint]:
-    rows = db.query(Transaction.txn_date, Transaction.amount).filter(Transaction.user_id == user_id).all()
+    rows = (
+        db.query(Transaction.txn_date, Transaction.amount)
+        .filter(Transaction.user_id == user_id)
+        .all()
+    )
 
     buckets: dict[str, dict[str, Decimal]] = defaultdict(
         lambda: {"income": Decimal("0"), "expenses": Decimal("0")}
@@ -51,7 +55,9 @@ def health_score(db: Session, user_id: str, trend: list[MonthlyTrendPoint]) -> H
     total_income = sum((m.income for m in trend), Decimal("0"))
     total_expenses = sum((m.expenses for m in trend), Decimal("0"))
 
-    savings_rate = float((total_income - total_expenses) / total_income) if total_income > 0 else 0.0
+    savings_rate = (
+        float((total_income - total_expenses) / total_income) if total_income > 0 else 0.0
+    )
     savings_rate = max(-1.0, min(savings_rate, 1.0))
 
     spending_budgets = (
@@ -73,16 +79,24 @@ def health_score(db: Session, user_id: str, trend: list[MonthlyTrendPoint]) -> H
 
     recommendations: list[str] = []
     if total_income == 0:
-        recommendations.append("No income recorded yet — add some transactions to get a real picture.")
+        recommendations.append(
+            "No income recorded yet — add some transactions to get a real picture."
+        )
     elif savings_rate < 0:
-        recommendations.append("You're spending more than you're earning this period — worth a closer look at your top categories.")
+        recommendations.append(
+            "You're spending more than you're earning this period — worth a closer look at your top categories."
+        )
 
     category_map = {c.id: c.name for c in db.query(Category).all()}
     for b in spending_budgets:
         actual = compute_actual(db, user_id, b)
         if actual > b.target_amount:
             over_by = actual - b.target_amount
-            label = category_map.get(b.category_id, "your overall budget") if b.category_id else "your overall budget"
+            label = (
+                category_map.get(b.category_id, "your overall budget")
+                if b.category_id
+                else "your overall budget"
+            )
             recommendations.append(f"You're over budget on {label} by {over_by:.2f} this period.")
 
     return HealthScoreOut(

@@ -1,11 +1,11 @@
 from sqlalchemy import (
     Column,
-    Integer,
-    String,
-    Numeric,
     Date,
     DateTime,
     ForeignKey,
+    Integer,
+    Numeric,
+    String,
     UniqueConstraint,
     func,
 )
@@ -31,6 +31,4 @@ class Transaction(Base):
 
     created_at = Column(DateTime(timezone=True), server_default=func.now())
 
-    __table_args__ = (
-        UniqueConstraint("user_id", "dedupe_hash", name="uq_user_dedupe_hash"),
-    )
+    __table_args__ = (UniqueConstraint("user_id", "dedupe_hash", name="uq_user_dedupe_hash"),)
