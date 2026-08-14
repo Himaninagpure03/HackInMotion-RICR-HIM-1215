@@ -16,6 +16,8 @@ from .transactions import models as transaction_models  # noqa: F401
 from .transactions.router import router as transactions_router
 from .users import models as user_models  # noqa: F401
 from .users.router import router as users_router
+from .bills import models as bill_models
+from .bills.router import router as bills_router
 
 Base.metadata.create_all(bind=engine)
 
@@ -38,6 +40,7 @@ app.include_router(categories_router)
 app.include_router(transactions_router)
 app.include_router(budgets_router)
 app.include_router(analytics_router)
+app.include_router(bills_router)
 
 
 @app.get("/health")
