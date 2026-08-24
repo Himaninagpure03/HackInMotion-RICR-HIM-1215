@@ -1,0 +1,42 @@
+# Full production stack: Postgres + API. Requires a .env next to this file
+# (see .env.example). Deploy:
+#
+#   cp .env.example .env   # fill in real values first
+#   docker compose -f docker-compose.prod.yml up -d --build
+#
+# TLS termination is left to your edge (load balancer, Cloudflare, Caddy, ...).
+
+services:
+  postgres:
+    image: postgres:16-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:?POSTGRES_USER missing from .env}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?POSTGRES_PASSWORD missing from .env}
+      POSTGRES_DB: ${POSTGRES_DB:-fintech}
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $$POSTGRES_USER -d $$POSTGRES_DB"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+    # Not published to the host: only reachable on the internal compose network.
+
+  api:
+    build: .
+    restart: unless-stopped
+    env_file:
+      - .env
+    environment:
+      # Overrides DATABASE_URL from .env so the API always reaches Postgres
+      # through the internal network, never a host-published port.
+      DATABASE_URL: postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB:-fintech}
+    ports:
+      - "${API_PORT:-8000}:8000"
+    depends_on:
+      postgres:
+        condition: service_healthy
+
+volumes:
+  pgdata:

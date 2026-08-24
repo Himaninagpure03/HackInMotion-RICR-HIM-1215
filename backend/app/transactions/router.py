@@ -3,6 +3,7 @@ from sqlalchemy.orm import Session
 
 from ..accounts.models import Account
 from ..categories.models import Category
+from ..core.config import settings
 from ..core.database import get_db
 from ..users.dependencies import require_local_user
 from .categorizer import categorize
@@ -73,7 +74,8 @@ def list_transactions(
     user_id: str = Depends(require_local_user),
     db: Session = Depends(get_db),
 ):
-    """Pass ?account_id=N to view a single account; omit it for the unified view across all accounts."""
+    """Pass ?account_id=N to view a single account; omit it for the unified
+    view across all accounts."""
     query = db.query(Transaction).filter(Transaction.user_id == user_id)
     if account_id is not None:
         query = query.filter(Transaction.account_id == account_id)
@@ -137,7 +139,26 @@ async def import_transactions(
     """
     _validate_account(db, user_id, account_id)
 
-    contents = await file.read()
+    # Read in chunks so an oversized upload is rejected before it can exhaust
+    # memory. Content-Length alone can't be trusted (proxies may not forward
+    # it), and Starlette's UploadFile.size isn't guaranteed to be set.
+    max_bytes = settings.max_upload_bytes
+    if file.size is not None and file.size > max_bytes:
+        raise HTTPException(
+            status_code=413,
+            detail=f"CSV file too large (limit: {max_bytes // (1024 * 1024)} MB)",
+        )
+
+    buffer = bytearray()
+    while chunk := await file.read(512 * 1024):
+        buffer.extend(chunk)
+        if len(buffer) > max_bytes:
+            raise HTTPException(
+                status_code=413,
+                detail=f"CSV file too large (limit: {max_bytes // (1024 * 1024)} MB)",
+            )
+    contents = bytes(buffer)
+
     result = import_transactions_csv(db, user_id, contents, account_id=account_id)
     return {
         "imported": result.imported,

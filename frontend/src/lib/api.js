@@ -1,6 +1,9 @@
 import { useAuth } from "@clerk/clerk-react";
 
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
+// Defaults to the Vite dev proxy ("/api" -> backend, see vite.config.js) so
+// local development is same-origin: no CORS, no localhost/127.0.0.1 issues.
+// In production set VITE_API_BASE_URL to the real API origin.
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL ?? "/api";
 
 /**
  * Returns a `fetch`-like function that automatically attaches the

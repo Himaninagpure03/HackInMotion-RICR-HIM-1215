@@ -15,6 +15,7 @@ The importer is intentionally defensive:
 
 import csv
 import io
+import logging
 import re
 from dataclasses import dataclass, field
 from datetime import date, datetime
@@ -28,6 +29,8 @@ from ..categories.models import Category
 from .categorizer import categorize
 from .dedupe import compute_dedupe_hash
 from .models import Transaction
+
+logger = logging.getLogger(__name__)
 
 
 ISO_DATE_RE = re.compile(r"^\d{4}-\d{2}-\d{2}$")
@@ -314,10 +317,11 @@ def import_transactions_csv(
                 db.query(Category.id, Category.name).all()
             )
         }
-    except SQLAlchemyError as exc:
+    except SQLAlchemyError:
         db.rollback()
+        logger.exception("CSV import: failed to prepare database for user %s", user_id)
         result.errors.append(
-            f"Could not prepare the database for import: {exc}"
+            "Could not prepare the database for import. Please try again later."
         )
         return result
 
@@ -475,20 +479,23 @@ def import_transactions_csv(
             f"CSV parsing failed while processing the file: {exc}"
         )
 
-    except SQLAlchemyError as exc:
+    except SQLAlchemyError:
         db.rollback()
+        logger.exception("CSV import: database error for user %s", user_id)
         result.errors.append(
-            f"Database error while importing transactions: {exc}"
+            "Database error while importing transactions. "
+            "No transactions were imported."
         )
 
         # Since the whole transaction was rolled back, the
         # imported count is no longer accurate.
         result.imported = 0
 
-    except Exception as exc:
+    except Exception:
         # Last-resort protection. The API should not return a
         # 500 simply because one unexpected CSV caused an issue.
         db.rollback()
+        logger.exception("CSV import: unexpected error for user %s", user_id)
 
         result.errors.append(
             "An unexpected error occurred while importing the CSV. "

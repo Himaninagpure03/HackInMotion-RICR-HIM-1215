@@ -11,6 +11,9 @@ select = [
     "B",    # bugbear
     "UP",   # pyupgrade
 ]
+ignore = [
+    "B008", # function call in argument defaults — required by FastAPI's Depends()/File() idiom
+]
 
 [tool.ruff.format]
 quote-style = "double"
