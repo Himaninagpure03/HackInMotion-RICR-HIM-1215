@@ -8,7 +8,6 @@ from ..users.dependencies import require_local_user
 from .models import Bill
 from .schemas import BillCreate, BillOut, BillStatusUpdate
 
-
 router = APIRouter(
     prefix="/bills",
     tags=["bills"],

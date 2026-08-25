@@ -43,7 +43,7 @@ def verify_clerk_token(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail=f"Invalid or expired token: {exc}",
             headers={"WWW-Authenticate": "Bearer"},
-        )
+        ) from exc
     return payload
 
 

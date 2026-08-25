@@ -87,17 +87,36 @@ backend/app/
 
 ## Setup
 
-### Backend
+### Backend (local development)
 ```bash
 cd backend
 docker compose up -d          # starts Postgres
-cp .env.example .env          # fill in CLERK_ISSUER (see below)
+cp .env.example .env          # fill in CLERK_ISSUER and DB credentials
 python -m venv venv && source venv/bin/activate
 pip install -r requirements.txt
+alembic upgrade head          # create/migrate the schema
 uvicorn app.main:app --reload
 ```
 
 `CLERK_ISSUER` can be derived from your Clerk publishable key (`pk_test_...`) — decode the base64 portion after the prefix to get your Clerk Frontend API URL.
+
+Schema changes are managed with Alembic (`migrations/versions/`) — never `create_all()`. To add one:
+
+```bash
+alembic revision --autogenerate -m "describe change"   # review the generated file!
+alembic upgrade head
+```
+
+If you have a pre-existing database built by an older version of the app (auto-created tables, no migration history), adopt the baseline once with `alembic stamp head`.
+
+### Production deploy (Docker)
+```bash
+cd backend
+cp .env.example .env          # real values: CLERK_ISSUER, strong POSTGRES_PASSWORD, CORS_ORIGINS
+docker compose -f docker-compose.prod.yml up -d --build
+```
+
+This builds the API image (multi-worker uvicorn, non-root), starts Postgres on an internal network, runs migrations automatically before serving, and health-checks the API at `/readyz`. TLS termination is expected at your edge (load balancer, Cloudflare, Caddy, ...). Useful knobs in `.env`: `WEB_CONCURRENCY` (uvicorn workers), `API_PORT`, `LOG_LEVEL`, rate-limit settings.
 
 ### Frontend
 ```bash
