@@ -29,6 +29,7 @@ from ..categories.models import Category
 from .categorizer import categorize
 from .dedupe import compute_dedupe_hash
 from .models import Transaction
+from ..currency.service import get_exchange_rate
 
 logger = logging.getLogger(__name__)
 
@@ -131,7 +132,27 @@ def _parse_date(raw: str) -> date | None:
     except (ValueError, OverflowError, TypeError):
         return None
 
+def _detect_currency(raw: str) -> str:
+    """
+    Detect currency from common currency symbols.
 
+    If no symbol is present, INR is used as the default currency.
+    """
+    if not raw:
+        return "INR"
+
+    value = raw.strip()
+
+    if "₹" in value:
+        return "INR"
+    if "$" in value:
+        return "USD"
+    if "€" in value:
+        return "EUR"
+    if "£" in value:
+        return "GBP"
+
+    return "INR"
 def _parse_amount(raw: str) -> Decimal | None:
     """
     Parse currency/amount values such as:
@@ -236,6 +257,7 @@ def import_transactions_csv(
     account_id: int | None = None,
 ) -> ImportResult:
     result = ImportResult()
+    rate_cache: dict[str, Decimal] = {}
 
     # ---------------------------------------------------------
     # 1. Basic file validation
@@ -392,14 +414,46 @@ def import_transactions_csv(
             # Amount
             # -------------------------------------------------
 
-            amount = _parse_amount(raw_amount)
+            original_currency = _detect_currency(raw_amount)
 
-            if amount is None:
+            original_amount = _parse_amount(raw_amount)
+
+            if original_amount is None:
                 result.errors.append(
                     f"Row {row_number}: invalid amount "
                     f"'{raw_amount}', skipped."
                 )
                 continue
+
+            # Convert foreign currencies to INR.
+            if original_currency == "INR":
+                amount = original_amount
+            else:
+                try:
+                    if original_currency not in rate_cache:
+                        rate_cache[original_currency] = Decimal(
+                            str(get_exchange_rate(original_currency, "INR"))
+                        )
+
+                    exchange_rate = rate_cache[original_currency]
+
+                    amount = (
+                        original_amount * exchange_rate
+                    ).quantize(Decimal("0.01"))
+
+                except Exception:
+                    logger.exception(
+                        "Currency conversion failed for row %s: %s -> INR",
+                        row_number,
+                        original_currency,
+                    )
+
+                    result.errors.append(
+                        f"Row {row_number}: could not convert "
+                        f"{original_currency} to INR, skipped."
+                    )
+                    continue
+
 
             # -------------------------------------------------
             # Description
@@ -457,12 +511,14 @@ def import_transactions_csv(
                     user_id=user_id,
                     account_id=account_id,
                     category_id=category_id,
+                    original_amount=original_amount,
+                    original_currency=original_currency,
                     amount=amount,
+                    currency="INR",
                     txn_date=txn_date,
                     description=raw_desc,
                     source="csv_import",
-                    dedupe_hash=dedupe_hash,
-                )
+                    dedupe_hash=dedupe_hash,)
             )
 
             result.imported += 1
