@@ -98,6 +98,22 @@ function ScoreRing({ score }) {
 }
 
 function HealthScoreCard({ health }) {
+   if (health.score == null) {
+    return (
+      <div style={CARD_STYLE}>
+        <h2 style={CARD_TITLE}>Financial health</h2>
+
+        <div style={{ padding: "1rem 0", color: "var(--text-muted)" }}>
+          <div style={{ fontWeight: 700, marginBottom: "0.35rem" }}>
+            No data yet
+          </div>
+          <div style={{ fontSize: "0.82rem" }}>
+            Add transactions to see your financial health score.
+          </div>
+        </div>
+      </div>
+    );
+  }
   const pct = Math.max(0, Math.min(health.score, 100));
   const label =
     pct >= 70 ? "Healthy" : pct >= 40 ? "Needs attention" : "At risk";

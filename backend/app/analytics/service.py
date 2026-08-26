@@ -54,7 +54,16 @@ def monthly_trend(db: Session, user_id: str) -> list[MonthlyTrendPoint]:
 def health_score(db: Session, user_id: str, trend: list[MonthlyTrendPoint]) -> HealthScoreOut:
     total_income = sum((m.income for m in trend), Decimal("0"))
     total_expenses = sum((m.expenses for m in trend), Decimal("0"))
-
+    if not trend:
+      return HealthScoreOut(
+        score=None,
+        savings_rate=0,
+        total_income=total_income,
+        total_expenses=total_expenses,
+        recommendations=[
+            "Add some transactions to calculate your financial health."
+          ],
+      )
     savings_rate = (
         float((total_income - total_expenses) / total_income) if total_income > 0 else 0.0
     )
