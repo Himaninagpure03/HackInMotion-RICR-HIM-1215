@@ -56,7 +56,10 @@ def create_transaction(
         user_id=user_id,
         account_id=payload.account_id,
         category_id=category.id if category else None,
+        original_amount=payload.amount,
+        original_currency="INR",
         amount=payload.amount,
+        currency="INR",
         txn_date=payload.txn_date,
         description=payload.description,
         source="manual",
@@ -89,8 +92,7 @@ def update_transaction(
     user_id: str = Depends(require_local_user),
     db: Session = Depends(get_db),
 ):
-    """Lets a user correct the auto-categorizer's guess (or the assigned
-    account) on a specific transaction."""
+    """Lets a user correct any field on a transaction they own."""
     txn = (
         db.query(Transaction)
         .filter(Transaction.id == transaction_id, Transaction.user_id == user_id)
@@ -112,15 +114,48 @@ def update_transaction(
     if "category_id" in updates:
         txn.category_id = payload.category_id
 
+    if "amount" in updates:
+        txn.amount = payload.amount
+
+    if "txn_date" in updates:
+        txn.txn_date = payload.txn_date
+
+    if "description" in updates:
+        txn.description = payload.description
+
     if "account_id" in updates:
         txn.account_id = payload.account_id
+
+    # Recalculate dedupe hash if any identity field changed
+    identity_fields = {"amount", "txn_date", "description", "account_id"}
+    if identity_fields & set(updates.keys()):
         txn.dedupe_hash = compute_dedupe_hash(
-            user_id, txn.txn_date, txn.amount, txn.description, payload.account_id
+            user_id, txn.txn_date, txn.amount, txn.description, txn.account_id
         )
 
     db.commit()
     db.refresh(txn)
     return txn
+
+
+@router.delete("/{transaction_id}")
+def delete_transaction(
+    transaction_id: int,
+    user_id: str = Depends(require_local_user),
+    db: Session = Depends(get_db),
+):
+    """Permanently removes a transaction."""
+    txn = (
+        db.query(Transaction)
+        .filter(Transaction.id == transaction_id, Transaction.user_id == user_id)
+        .first()
+    )
+    if not txn:
+        raise HTTPException(status_code=404, detail="Transaction not found")
+
+    db.delete(txn)
+    db.commit()
+    return {"detail": "deleted"}
 
 
 @router.post("/import")

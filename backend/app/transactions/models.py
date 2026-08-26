@@ -21,7 +21,11 @@ class Transaction(Base):
     account_id = Column(Integer, ForeignKey("accounts.id"), nullable=True, index=True)
     category_id = Column(Integer, ForeignKey("categories.id"), nullable=True, index=True)
 
-    amount = Column(Numeric(12, 2), nullable=False)  # positive = income, negative = expense
+    original_amount = Column(Numeric(12, 2), nullable=True)
+    original_currency = Column(String(3), nullable=True)
+
+    amount = Column(Numeric(12, 2), nullable=False)
+    currency = Column(String(3), nullable=False, default="INR")
     txn_date = Column(Date, nullable=False)
     description = Column(String, nullable=False)
     source = Column(String, nullable=False, default="manual")  # "manual" | "csv_import"

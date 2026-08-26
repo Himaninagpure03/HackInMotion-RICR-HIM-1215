@@ -12,13 +12,19 @@ class TransactionCreate(BaseModel):
 
 
 class TransactionUpdate(BaseModel):
+    amount: Decimal | None = None
+    txn_date: date | None = None
+    description: str | None = Field(default=None, min_length=1)
     category_id: int | None = None
     account_id: int | None = None
 
 
 class TransactionOut(BaseModel):
     id: int
+    original_amount: Decimal | None
+    original_currency: str | None
     amount: Decimal
+    currency: str
     txn_date: date
     description: str
     category_id: int | None

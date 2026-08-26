@@ -17,8 +17,8 @@ import {
 import { useApi } from "../lib/api";
 
 const CATEGORY_COLORS = [
-  "#2f5d8c", "#123a63", "#0e7490", "#1f7a46", "#6d4ba1",
-  "#c4003b", "#b45309", "#5b9bd5", "#9a3412", "#7c8fa6",
+  "#2D6A4F", "#C85A32", "#B45309", "#78716C", "#1B4332",
+  "#A64825", "#8B6914", "#5D7A6B", "#9A6049", "#A8A29E",
 ];
 
 const MONTHS = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
@@ -28,7 +28,6 @@ const CARD_STYLE = {
   border: "1px solid var(--border)",
   borderRadius: 10,
   padding: "0.9rem",
-  boxShadow: "0 1px 2px rgba(11,31,59,0.05), 0 1px 3px rgba(11,31,59,0.06)",
 };
 
 const AXIS_TICK = { fill: "var(--text-muted)", fontSize: 11 };
@@ -44,8 +43,8 @@ const CARD_TITLE = { fontSize: "0.92rem", marginTop: 0, marginBottom: "0.75rem" 
 
 const money = (v) => `\u20b9${Number(v).toLocaleString()}`;
 
-const INCOME_GRADIENT = ["#4caf7d", "#1f7a46"];
-const EXPENSE_GRADIENT = ["#e2547d", "#c4003b"];
+const INCOME_GRADIENT = ["#4CAF7D", "#2D6A4F"];
+const EXPENSE_GRADIENT = ["#E07A52", "#C85A32"];
 
 const currentMonth = () => {
   const d = new Date();
@@ -58,7 +57,7 @@ function ScoreRing({ score }) {
   const r = (size - stroke) / 2;
   const c = 2 * Math.PI * r;
   const pct = Math.max(0, Math.min(score, 100));
-  const color = pct >= 70 ? "#1f7a46" : pct >= 40 ? "#b45309" : "#c4003b";
+  const color = pct >= 70 ? "#2D6A4F" : pct >= 40 ? "#B45309" : "#C85A32";
   return (
     <svg width={size} height={size} viewBox={`0 0 ${size} ${size}`}>
       <circle
@@ -258,18 +257,18 @@ function SavingsNote({ income, expenses, savingsRate }) {
     icon = "\u2013";
     text = "No income recorded yet \u2014 add income and expenses on the Transactions page to see how much you're saving.";
   } else if (savingsRate < 10) {
-    style = { background: "var(--danger-dim)", border: "1px solid rgba(248,113,113,0.3)" };
+    style = { background: "var(--danger-dim)", border: "1px solid rgba(200,90,50,0.3)" };
     icon = "\u26a0\ufe0f";
     text =
       savingsRate < 0
         ? `Warning \u2014 you spent ${money(Math.abs(saved))} more than you earned this period (${savingsRate}% savings).`
         : `Low savings \u2014 you're keeping only ${savingsRate}% of your income (${money(saved)}). Aim for at least 20%.`;
   } else if (savingsRate >= 20) {
-    style = { background: "var(--positive-dim)", border: "1px solid rgba(31,122,70,0.25)" };
+    style = { background: "var(--positive-dim)", border: "1px solid rgba(45,106,79,0.25)" };
     icon = "\ud83d\udc4c";
     text = `Excellent \u2014 you saved ${savingsRate}% of your income this period (${money(saved)}).`;
   } else {
-    style = { background: "var(--positive-dim)", border: "1px solid rgba(31,122,70,0.25)" };
+    style = { background: "var(--positive-dim)", border: "1px solid rgba(45,106,79,0.25)" };
     icon = "\ud83d\udc4d";
     text = `Good \u2014 you saved ${savingsRate}% of your income this period (${money(saved)}).`;
   }
@@ -312,9 +311,9 @@ function SavingsBreakdownChart({ income, expenses, savingsRate }) {
   ];
 
   const rows = [
-    { label: "Income", value: totalIncome, pct: 100, color: "#1f7a46" },
-    { label: "Expenses", value: Math.max(totalExpenses, 0), pct: expensesPct, color: "#c4003b" },
-    { label: "Saved", value: Math.max(saved, 0), pct: savingsRate, color: "#4caf7d" },
+    { label: "Income", value: totalIncome, pct: 100, color: "#2D6A4F" },
+    { label: "Expenses", value: Math.max(totalExpenses, 0), pct: expensesPct, color: "#C85A32" },
+    { label: "Saved", value: Math.max(saved, 0), pct: savingsRate, color: "#4CAF7D" },
   ];
 
   return (
@@ -324,12 +323,12 @@ function SavingsBreakdownChart({ income, expenses, savingsRate }) {
           <PieChart>
             <defs>
               <linearGradient id="gradPieSavings" x1="0" y1="0" x2="1" y2="1">
-                <stop offset="0%" stopColor="#4caf7d" />
-                <stop offset="100%" stopColor="#1f7a46" />
+                <stop offset="0%" stopColor="#4CAF7D" />
+                <stop offset="100%" stopColor="#2D6A4F" />
               </linearGradient>
               <linearGradient id="gradPieExpenses" x1="0" y1="0" x2="1" y2="1">
-                <stop offset="0%" stopColor="#e2547d" />
-                <stop offset="100%" stopColor="#c4003b" />
+                <stop offset="0%" stopColor="#E07A52" />
+                <stop offset="100%" stopColor="#C85A32" />
               </linearGradient>
             </defs>
             <Pie
@@ -563,11 +562,11 @@ function MonthlyTrendChart({ data }) {
       </ResponsiveContainer>
       <div style={{ display: "flex", gap: "1.25rem", justifyContent: "center", marginTop: "0.5rem" }}>
           <span style={{ display: "inline-flex", alignItems: "center", gap: "0.4rem", fontSize: "0.78rem", color: "var(--text-muted)" }}>
-          <span style={{ width: 9, height: 9, borderRadius: 3, background: "linear-gradient(135deg, #4caf7d, #1f7a46)" }} />
+          <span style={{ width: 9, height: 9, borderRadius: 3, background: "linear-gradient(135deg, #4CAF7D, #2D6A4F)" }} />
             Income
           </span>
           <span style={{ display: "inline-flex", alignItems: "center", gap: "0.4rem", fontSize: "0.78rem", color: "var(--text-muted)" }}>
-            <span style={{ width: 9, height: 9, borderRadius: 3, background: "linear-gradient(135deg, #e2547d, #c4003b)" }} />
+            <span style={{ width: 9, height: 9, borderRadius: 3, background: "linear-gradient(135deg, #E07A52, #C85A32)" }} />
             Expenses
           </span>
       </div>
@@ -605,11 +604,11 @@ function BudgetsList({ budgets, categoryNames }) {
         const barColor =
           b.kind === "spending_limit"
             ? b.status === "over"
-              ? "#c4003b"
-              : "#2f5d8c"
+              ? "#C85A32"
+              : "#2D6A4F"
             : b.status === "reached"
-              ? "#1f7a46"
-              : "#b45309";
+              ? "#2D6A4F"
+              : "#B45309";
         const label =
           (b.kind === "spending_limit" ? "Spending limit" : "Savings goal") +
           (b.category_id ? ` \u00b7 ${categoryNames.get(b.category_id) ?? "Category"}` : " \u00b7 Overall");

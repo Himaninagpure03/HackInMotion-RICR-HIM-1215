@@ -16,6 +16,10 @@ export default function Transactions() {
   const [csvAccountId, setCsvAccountId] = useState("");
   const [importResult, setImportResult] = useState(null);
 
+  const [editing, setEditing] = useState(null);
+  const [editForm, setEditForm] = useState({ amount: "", txn_date: "", description: "", account_id: "" });
+  const [deleting, setDeleting] = useState(null);
+
   async function loadData() {
     try {
       const [txns, cats, accts] = await Promise.all([
@@ -84,6 +88,55 @@ export default function Transactions() {
       setTransactions((prev) =>
         prev.map((t) => (t.id === txnId ? { ...t, category_id: updated.category_id } : t))
       );
+      setError(null);
+    } catch (err) {
+      setError(err.message);
+    }
+  }
+
+  function openEdit(txn) {
+    setEditing(txn);
+    setEditForm({
+      amount: String(txn.amount),
+      txn_date: txn.txn_date,
+      description: txn.description,
+      account_id: txn.account_id == null ? "" : String(txn.account_id),
+    });
+  }
+
+  function closeEdit() {
+    setEditing(null);
+  }
+
+  async function handleEditSave(e) {
+    e.preventDefault();
+    if (!editing) return;
+    try {
+      const updated = await api(`/transactions/${editing.id}`, {
+        method: "PATCH",
+        body: JSON.stringify({
+          amount: Number(editForm.amount),
+          txn_date: editForm.txn_date,
+          description: editForm.description,
+          account_id: editForm.account_id === "" ? null : Number(editForm.account_id),
+        }),
+      });
+      setTransactions((prev) =>
+        prev.map((t) => (t.id === editing.id ? { ...t, ...updated } : t))
+      );
+      setEditing(null);
+      setError(null);
+    } catch (err) {
+      setError(err.message);
+    }
+  }
+
+  async function handleDelete() {
+    if (!deleting) return;
+    try {
+      await api(`/transactions/${deleting.id}`, { method: "DELETE" });
+      setTransactions((prev) => prev.filter((t) => t.id !== deleting.id));
+      setDeleting(null);
       setError(null);
     } catch (err) {
       setError(err.message);
@@ -241,6 +294,7 @@ export default function Transactions() {
                   <th>Category</th>
                   <th>Account</th>
                   <th className="right">Amount</th>
+                  <th></th>
                 </tr>
               </thead>
               <tbody>
@@ -278,8 +332,40 @@ export default function Transactions() {
                           ))}
                         </select>
                       </td>
-                      <td data-label="Amount" className={`right ${amount < 0 ? "amount-neg" : "amount-pos"}`}>
-                        {formatCurrency(amount)}
+                      <td
+                        data-label="Amount"
+                        className="right txn-amount"
+                        style={{ color: amount < 0 ? "var(--danger)" : "var(--positive)" }}
+                      >
+                        {amount < 0 ? "\u2212" : "+"}
+                        {formatCurrency(Math.abs(amount))}
+                      </td>
+                      <td data-label="Actions">
+                        <div className="txn-actions">
+                          <button
+                            type="button"
+                            className="btn-icon"
+                            title="Edit transaction"
+                            onClick={() => openEdit(t)}
+                          >
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                              <path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z" />
+                              <path d="m15 5 4 4" />
+                            </svg>
+                          </button>
+                          <button
+                            type="button"
+                            className="btn-icon btn-icon-danger"
+                            title="Delete transaction"
+                            onClick={() => setDeleting(t)}
+                          >
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                              <path d="M3 6h18" />
+                              <path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6" />
+                              <path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2" />
+                            </svg>
+                          </button>
+                        </div>
                       </td>
                     </tr>
                   );
@@ -289,6 +375,101 @@ export default function Transactions() {
           </div>
         )}
       </section>
+
+      {editing && (
+        <div className="modal-backdrop" onClick={closeEdit}>
+          <div className="modal" onClick={(e) => e.stopPropagation()}>
+            <div className="modal-head">
+              <h3>Edit transaction</h3>
+            </div>
+            <form onSubmit={handleEditSave}>
+              <div className="modal-body">
+                <div className="form-col">
+                  <label>
+                    Amount
+                    <input
+                      className="input"
+                      type="number"
+                      step="0.01"
+                      value={editForm.amount}
+                      onChange={(e) => setEditForm({ ...editForm, amount: e.target.value })}
+                      required
+                    />
+                  </label>
+                  <label>
+                    Date
+                    <input
+                      className="input"
+                      type="date"
+                      value={editForm.txn_date}
+                      onChange={(e) => setEditForm({ ...editForm, txn_date: e.target.value })}
+                      required
+                    />
+                  </label>
+                  <label>
+                    Description
+                    <input
+                      className="input"
+                      type="text"
+                      value={editForm.description}
+                      onChange={(e) => setEditForm({ ...editForm, description: e.target.value })}
+                      required
+                    />
+                  </label>
+                  <label>
+                    Account
+                    <select
+                      className="input"
+                      value={editForm.account_id}
+                      onChange={(e) => setEditForm({ ...editForm, account_id: e.target.value })}
+                    >
+                      <option value="">No account</option>
+                      {accounts.map((a) => (
+                        <option key={a.id} value={a.id}>
+                          {a.name}
+                        </option>
+                      ))}
+                    </select>
+                  </label>
+                </div>
+              </div>
+              <div className="modal-foot">
+                <button type="button" className="btn btn-ghost" onClick={closeEdit}>
+                  Cancel
+                </button>
+                <button type="submit" className="btn btn-primary">
+                  Save
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {deleting && (
+        <div className="modal-backdrop" onClick={() => setDeleting(null)}>
+          <div className="modal" onClick={(e) => e.stopPropagation()}>
+            <div className="modal-head">
+              <h3>Delete transaction?</h3>
+            </div>
+            <div className="modal-body">
+              <p>
+                This will permanently delete <strong>{deleting.description}</strong> for{" "}
+                {formatCurrency(Number(deleting.amount))} on {formatDate(deleting.txn_date)}.
+                This action cannot be undone.
+              </p>
+            </div>
+            <div className="modal-foot">
+              <button type="button" className="btn btn-ghost" onClick={() => setDeleting(null)}>
+                Cancel
+              </button>
+              <button type="button" className="btn btn-danger" onClick={handleDelete}>
+                Delete
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </main>
   );
 }

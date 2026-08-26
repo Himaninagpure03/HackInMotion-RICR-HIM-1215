@@ -16,7 +16,7 @@ class MonthlyTrendPoint(BaseModel):
 
 
 class HealthScoreOut(BaseModel):
-    score: int  # 0-100
+    score: int | None # 0-100
     savings_rate: float  # percent, e.g. 12.5
     total_income: Decimal
     total_expenses: Decimal

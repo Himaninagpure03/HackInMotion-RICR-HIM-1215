@@ -1,0 +1,77 @@
+"""add transaction currency fields
+
+Revision ID: 47bdccc3c56f
+Revises: 0001
+Create Date: 2026-08-26 13:42:57.168779
+
+"""
+from typing import Sequence, Union
+
+from alembic import op
+import sqlalchemy as sa
+
+
+revision: str = '47bdccc3c56f'
+down_revision: Union[str, None] = '0001'
+branch_labels: Union[str, Sequence[str], None] = None
+depends_on: Union[str, Sequence[str], None] = None
+
+
+def upgrade() -> None:
+    op.add_column(
+        "transactions",
+        sa.Column(
+            "original_amount",
+            sa.Numeric(precision=12, scale=2),
+            nullable=True,
+        ),
+    )
+
+    op.add_column(
+        "transactions",
+        sa.Column(
+            "original_currency",
+            sa.String(length=3),
+            nullable=True,
+        ),
+    )
+
+    # Existing transactions were already stored in INR.
+    # Preserve their current amount as the original amount.
+    op.execute(
+        """
+        UPDATE transactions
+        SET
+            original_amount = amount,
+            original_currency = 'INR'
+        """
+    )
+
+    op.add_column(
+        "transactions",
+        sa.Column(
+            "currency",
+            sa.String(length=3),
+            nullable=True,
+        ),
+    )
+
+    # Existing transactions use INR.
+    op.execute(
+        """
+        UPDATE transactions
+        SET currency = 'INR'
+        """
+    )
+
+    # New transactions must always have a currency.
+    op.alter_column(
+        "transactions",
+        "currency",
+        existing_type=sa.String(length=3),
+        nullable=False,
+    )
+def downgrade() -> None:
+    op.drop_column('transactions', 'currency')
+    op.drop_column('transactions', 'original_currency')
+    op.drop_column('transactions', 'original_amount')
