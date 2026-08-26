@@ -1,7 +1,8 @@
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
-import { useUser } from "@clerk/clerk-react";
+import { useUser, useAuth } from "@clerk/clerk-react";
 import { useMediaQuery } from "../lib/useMediaQuery";
+import { renderMarkdown } from "../lib/markdown";
 import {
   ResponsiveContainer,
   PieChart,
@@ -822,6 +823,216 @@ function BillsCard({ bills, onMarkPaid }) {
   );
 }
 
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL ?? "/api";
+
+const RECS_CACHE_KEY = "finhealth_recs_cache";
+const RECS_TTL_MS = 24 * 60 * 60 * 1000; // 24 hours
+
+function readRecsCache() {
+  try {
+    const raw = localStorage.getItem(RECS_CACHE_KEY);
+    if (!raw) return null;
+    return JSON.parse(raw);
+  } catch {
+    return null;
+  }
+}
+
+function writeRecsCache(data) {
+  try {
+    localStorage.setItem(
+      RECS_CACHE_KEY,
+      JSON.stringify({ data, timestamp: Date.now() })
+    );
+  } catch { /* localStorage unavailable */ }
+}
+
+function timeAgo(ts) {
+  const secs = Math.floor((Date.now() - ts) / 1000);
+  if (secs < 60) return "just now";
+  const mins = Math.floor(secs / 60);
+  if (mins < 60) return `${mins}m ago`;
+  const hrs = Math.floor(mins / 60);
+  if (hrs < 24) return `${hrs}h ago`;
+  return `${Math.floor(hrs / 24)}d ago`;
+}
+
+function AIRecommendationsCard({ txnCount }) {
+  const { getToken } = useAuth();
+  const [recs, setRecs] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+  const [cachedAt, setCachedAt] = useState(null);
+
+  useEffect(() => {
+    async function fetchRecs(force) {
+      // Check cache first (unless forced)
+      if (!force) {
+        const cache = readRecsCache();
+        const prevCount = localStorage.getItem("finhealth_recs_txn_count");
+        const countChanged = prevCount !== null && String(txnCount) !== prevCount;
+        if (cache && !countChanged && Date.now() - cache.timestamp < RECS_TTL_MS) {
+          setRecs(cache.data);
+          setCachedAt(cache.timestamp);
+          setLoading(false);
+          return;
+        }
+      }
+
+      try {
+        const token = await getToken();
+        const headers = {};
+        if (token) headers["Authorization"] = `Bearer ${token}`;
+        const res = await fetch(`${API_BASE_URL}/chat/recommendations`, { headers });
+        if (!res.ok) throw new Error(`API ${res.status}`);
+        const data = await res.json();
+        setRecs(data);
+        setCachedAt(Date.now());
+        writeRecsCache(data);
+        localStorage.setItem("finhealth_recs_txn_count", String(txnCount));
+      } catch (err) {
+        // If fetch fails but we have stale cache, show it
+        const cache = readRecsCache();
+        if (cache) {
+          setRecs(cache.data);
+          setCachedAt(cache.timestamp);
+        } else {
+          setError(err.message);
+        }
+      } finally {
+        setLoading(false);
+      }
+    }
+    fetchRecs(false);
+  }, [txnCount]);
+
+  function handleRefresh() {
+    setLoading(true);
+    setError(null);
+    // Force re-fetch by calling with force=true
+    (async () => {
+      try {
+        const token = await getToken();
+        const headers = {};
+        if (token) headers["Authorization"] = `Bearer ${token}`;
+        const res = await fetch(`${API_BASE_URL}/chat/recommendations`, { headers });
+        if (!res.ok) throw new Error(`API ${res.status}`);
+        const data = await res.json();
+        setRecs(data);
+        setCachedAt(Date.now());
+        writeRecsCache(data);
+        localStorage.setItem("finhealth_recs_txn_count", String(txnCount));
+      } catch (err) {
+        setError(err.message);
+      } finally {
+        setLoading(false);
+      }
+    })();
+  }
+
+  return (
+    <div style={CARD_STYLE}>
+      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: "0.75rem" }}>
+        <h2 style={CARD_TITLE}>AI Recommendations</h2>
+        <div style={{ display: "flex", alignItems: "center", gap: "0.6rem" }}>
+          {cachedAt && (
+            <span style={{ fontSize: "0.72rem", color: "var(--text-faint)" }}>
+              {timeAgo(cachedAt)}
+            </span>
+          )}
+          <button
+            type="button"
+            onClick={handleRefresh}
+            disabled={loading}
+            style={{
+              background: "none",
+              border: "none",
+              cursor: loading ? "not-allowed" : "pointer",
+              color: "var(--text-muted)",
+              padding: "0.2rem",
+              display: "flex",
+              alignItems: "center",
+              opacity: loading ? 0.4 : 1,
+              transition: "opacity 0.15s",
+            }}
+            title="Refresh recommendations"
+          >
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M23 4v6h-6" />
+              <path d="M1 20v-6h6" />
+              <path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15" />
+            </svg>
+          </button>
+          <Link to="/chat" style={{ fontSize: "0.82rem", color: "var(--accent)" }}>
+            Ask AI
+          </Link>
+        </div>
+      </div>
+
+      {loading && !recs && (
+        <div className="skeleton-stack">
+          <div className="skeleton" style={{ height: 18 }} />
+          <div className="skeleton" style={{ height: 18, width: "85%" }} />
+          <div className="skeleton" style={{ height: 18, width: "70%" }} />
+        </div>
+      )}
+
+      {error && !recs && (
+        <p style={{ color: "var(--text-muted)", fontSize: "0.85rem", margin: 0 }}>
+          Could not load recommendations. Make sure the AI service is running.
+        </p>
+      )}
+
+      {recs && (
+        <>
+          {recs.summary && (
+            <p style={{ color: "var(--text-muted)", fontSize: "0.88rem", margin: "0 0 0.6rem" }}>
+              {recs.summary}
+            </p>
+          )}
+          {recs.recommendations.length > 0 && (
+            <ul
+              style={{
+                margin: 0,
+                padding: 0,
+                listStyle: "none",
+                display: "flex",
+                flexDirection: "column",
+                gap: "0.5rem",
+              }}
+            >
+              {recs.recommendations.map((rec, i) => (
+                <li
+                  key={i}
+                  style={{
+                    display: "flex",
+                    gap: "0.5rem",
+                    color: "var(--text)",
+                    fontSize: "0.85rem",
+                    lineHeight: 1.45,
+                  }}
+                >
+                  <span
+                    style={{
+                      width: 5,
+                      height: 5,
+                      borderRadius: "50%",
+                      background: "var(--accent)",
+                      marginTop: "0.4rem",
+                      flexShrink: 0,
+                    }}
+                  />
+                  <span dangerouslySetInnerHTML={{ __html: renderMarkdown(rec) }} />
+                </li>
+              ))}
+            </ul>
+          )}
+        </>
+      )}
+    </div>
+  );
+}
+
 export default function Dashboard() {
   const { user } = useUser();
   const api = useApi();
@@ -902,6 +1113,8 @@ export default function Dashboard() {
             expenses={dashboard.health.total_expenses}
             savingsRate={dashboard.health.savings_rate}
           />
+
+          <AIRecommendationsCard txnCount={transactions.length} />
 
           <BillsCard bills={bills} onMarkPaid={handleBillPaid} />
 

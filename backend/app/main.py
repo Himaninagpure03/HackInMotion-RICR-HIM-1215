@@ -16,6 +16,7 @@ from .budgets import models as budget_models  # noqa: F401
 from .budgets.router import router as budgets_router
 from .categories import models as category_models  # noqa: F401
 from .categories.router import router as categories_router
+from .chatbot.router import router as chatbot_router
 from .core.config import settings
 from .core.database import get_db
 from .core.ratelimit import RateLimitMiddleware
@@ -54,6 +55,7 @@ app.include_router(transactions_router)
 app.include_router(budgets_router)
 app.include_router(analytics_router)
 app.include_router(bills_router)
+app.include_router(chatbot_router)
 
 
 @app.exception_handler(Exception)
