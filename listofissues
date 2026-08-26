@@ -1,0 +1,6 @@
+1. i see rupee symbol in the dashboard and dollar in transactions tab
+2. after creating the account, for the first usage, we don't want the user to go to dashboard, instead go to the transactions tab where user can upload or add, because there is nothing to display on the dashboard for the first usage
+3. why does the dashboard show financial health to be 40 even without any data, for the new user
+4. give the user option to edit the added transactions with warning, in case accidental stuff gets added
+5. color the transaction numbers depending on credit and debit in transactions tab
+6. I have to watch & review the financial health calculating algo
