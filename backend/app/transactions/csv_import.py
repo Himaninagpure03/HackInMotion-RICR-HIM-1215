@@ -30,6 +30,7 @@ from ..currency.service import get_exchange_rate
 from .categorizer import categorize
 from .dedupe import compute_dedupe_hash
 from .models import Transaction
+from ..currency.service import get_exchange_rate
 
 logger = logging.getLogger(__name__)
 
@@ -153,7 +154,6 @@ def _detect_currency(raw: str) -> str:
         return "GBP"
 
     return "INR"
-
 def _parse_amount(raw: str) -> Decimal | None:
     """
     Parse currency/amount values such as:

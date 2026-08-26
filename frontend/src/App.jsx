@@ -1,10 +1,12 @@
-import { useState } from "react";
-import { Routes, Route, Navigate, Link, NavLink } from "react-router-dom";
+import { useEffect, useState } from "react";
+import { Routes, Route, Navigate, Link, NavLink, useNavigate } from "react-router-dom";
 import { useAuth, SignIn, SignUp, SignedIn, SignedOut, UserButton } from "@clerk/clerk-react";
 import Dashboard from "./pages/Dashboard";
 import Transactions from "./pages/Transactions";
 import Accounts from "./pages/Accounts";
 import Landing from "./pages/Landing";
+import { useApi } from "./lib/api";
+
 
 function Protected({ children }) {
   return (
@@ -45,7 +47,37 @@ const ICONS = {
     </svg>
   ),
 };
+function HomeRedirect() {
+  const api = useApi();
+  const navigate = useNavigate();
+  const [checking, setChecking] = useState(true);
 
+  useEffect(() => {
+    async function checkFirstUse() {
+      try {
+        const transactions = await api("/transactions");
+
+        if (transactions.length === 0) {
+          navigate("/transactions", { replace: true });
+        } else {
+          navigate("/dashboard", { replace: true });
+        }
+      } catch (err) {
+        console.error("Failed to check transactions:", err);
+      } finally {
+        setChecking(false);
+      }
+    }
+
+    checkFirstUse();
+  }, []);
+
+  if (checking) {
+    return <div>Loading...</div>;
+  }
+
+  return null;
+}
 function AppNav() {
   const [menuOpen, setMenuOpen] = useState(false);
 
@@ -109,7 +141,16 @@ export default function App() {
 
       <div className={`app-body${isSignedIn ? " with-nav" : ""}`}>
         <Routes>
-          <Route path="/" element={<Landing />} />
+          <Route
+            path="/"
+            element={
+              isSignedIn ? (
+                <HomeRedirect />
+              ) : (
+                <Landing />
+              )
+            }
+          />
 
           {/* Clerk's hosted components handle the actual form + validation */}
           <Route
