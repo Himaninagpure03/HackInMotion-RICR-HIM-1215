@@ -26,6 +26,7 @@ from sqlalchemy.exc import SQLAlchemyError
 from sqlalchemy.orm import Session
 
 from ..categories.models import Category
+from ..currency.service import get_exchange_rate
 from .categorizer import categorize
 from .dedupe import compute_dedupe_hash
 from .models import Transaction

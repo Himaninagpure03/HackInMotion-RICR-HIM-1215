@@ -84,77 +84,51 @@ function AppNav() {
   const closeMenu = () => setMenuOpen(false);
 
   return (
-    <>
-      <div className="mobile-bar">
-        <Link to="/" className="brand" onClick={closeMenu}>
-          Fin<span className="brand-accent">Health</span>
-        </Link>
+    <header className="topbar">
+      <Link to="/" className="topbar-brand" onClick={closeMenu}>
+        Fin<span className="topbar-brand-accent">Health</span>
+      </Link>
 
-        <div className="nav-right">
-          <SignedIn>
-            <div className={`nav-links${menuOpen ? " open" : ""}`}>
-              {NAV_LINKS.map(({ to, label }) => (
-                <NavLink
-                  key={to}
-                  to={to}
-                  className={({ isActive }) => (isActive ? "nav-link active" : "nav-link")}
-                  onClick={closeMenu}
-                >
-                  {label}
-                </NavLink>
-              ))}
-            </div>
-
-            <button
-              type="button"
-              className="nav-burger"
-              aria-label={menuOpen ? "Close menu" : "Open menu"}
-              aria-expanded={menuOpen}
-              onClick={() => setMenuOpen((open) => !open)}
+      <SignedIn>
+        <nav className={`topbar-nav${menuOpen ? " open" : ""}`}>
+          {NAV_LINKS.map(({ to, label }) => (
+            <NavLink
+              key={to}
+              to={to}
+              className={({ isActive }) => (isActive ? "topbar-link active" : "topbar-link")}
+              onClick={closeMenu}
             >
-              {menuOpen ? (
-                <svg width="18" height="18" viewBox="0 0 18 18" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
-                  <path d="M4 4l10 10M14 4L4 14" />
-                </svg>
-              ) : (
-                <svg width="18" height="18" viewBox="0 0 18 18" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
-                  <path d="M2.5 5h13M2.5 9h13M2.5 13h13" />
-                </svg>
-              )}
-            </button>
-          </SignedIn>
-
-          <UserButton afterSignOutUrl="/" />
-        </div>
-      </div>
-
-      <aside className="sidebar">
-        <Link to="/" className="brand" onClick={closeMenu}>
-          Fin<span className="brand-accent">Health</span>
-        </Link>
-
-        <nav className="sidebar-nav">
-          <SignedIn>
-            {NAV_LINKS.map(({ to, label }) => (
-              <NavLink
-                key={to}
-                to={to}
-                className={({ isActive }) => (isActive ? "sidebar-link active" : "sidebar-link")}
-              >
-                {ICONS[label.toLowerCase()]}
-                {label}
-              </NavLink>
-            ))}
-          </SignedIn>
+              {ICONS[label.toLowerCase()]}
+              {label}
+            </NavLink>
+          ))}
         </nav>
+      </SignedIn>
 
-        <div className="sidebar-footer">
-          <SignedIn>
-            <UserButton afterSignOutUrl="/" />
-          </SignedIn>
-        </div>
-      </aside>
-    </>
+      <div className="topbar-right">
+        <SignedIn>
+          <button
+            type="button"
+            className="topbar-burger"
+            aria-label={menuOpen ? "Close menu" : "Open menu"}
+            aria-expanded={menuOpen}
+            onClick={() => setMenuOpen((open) => !open)}
+          >
+            {menuOpen ? (
+              <svg width="18" height="18" viewBox="0 0 18 18" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
+                <path d="M4 4l10 10M14 4L4 14" />
+              </svg>
+            ) : (
+              <svg width="18" height="18" viewBox="0 0 18 18" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
+                <path d="M2.5 5h13M2.5 9h13M2.5 13h13" />
+              </svg>
+            )}
+          </button>
+        </SignedIn>
+
+        <UserButton afterSignOutUrl="/" />
+      </div>
+    </header>
   );
 }
 

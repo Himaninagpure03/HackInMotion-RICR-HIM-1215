@@ -17,49 +17,49 @@ ReactDOM.createRoot(document.getElementById("root")).render(
       publishableKey={PUBLISHABLE_KEY}
       appearance={{
         variables: {
-          colorPrimary: "#2f5d8c",
-          colorBackground: "#ffffff",
-          colorText: "#0b1f3b",
-          colorTextSecondary: "#4a5b75",
-          colorInputBackground: "#ffffff",
-          colorInputText: "#0b1f3b",
-          colorTextOnPrimaryBackground: "#ffffff",
+          colorPrimary: "#2D6A4F",
+          colorBackground: "#FFFFFF",
+          colorText: "#1C1917",
+          colorTextSecondary: "#78716C",
+          colorInputBackground: "#FFFFFF",
+          colorInputText: "#1C1917",
+          colorTextOnPrimaryBackground: "#FFFFFF",
           borderRadius: "10px",
         },
         elements: {
           card: {
-            boxShadow: "0 1px 2px rgba(11, 31, 59, 0.05), 0 8px 24px -12px rgba(11, 31, 59, 0.12)",
-            border: "1px solid rgba(18, 58, 99, 0.14)",
+            boxShadow: "0 2px 8px rgba(28, 25, 23, 0.06)",
+            border: "1px solid #E7E0D6",
           },
-          footerActionLink: { color: "#2f5d8c" },
+          footerActionLink: { color: "#2D6A4F" },
           formButtonPrimary: {
-            background: "#2f5d8c",
-            color: "#ffffff",
+            background: "#2D6A4F",
+            color: "#FFFFFF",
           },
           socialButtonsBlockButton__google: {
-            backgroundColor: "#ffffff",
+            backgroundColor: "#FFFFFF",
             color: "#202124",
-            border: "1px solid rgba(18, 58, 99, 0.2)",
+            border: "1px solid #E7E0D6",
             "&:hover": {
-              backgroundColor: "#f1f3f4",
+              backgroundColor: "#F3EFE8",
             },
           },
           socialButtonsBlockButtonText__google: {
             color: "#202124",
           },
           userButtonPopoverCard: {
-            backgroundColor: "#ffffff",
-            border: "1px solid rgba(18, 58, 99, 0.14)",
-            boxShadow: "0 20px 50px -20px rgba(11, 31, 59, 0.25)",
+            backgroundColor: "#FFFFFF",
+            border: "1px solid #E7E0D6",
+            boxShadow: "0 8px 30px rgba(28, 25, 23, 0.12)",
           },
           userButtonPopoverActionButton: {
-            color: "#0b1f3b",
+            color: "#1C1917",
             "&:hover": {
-              backgroundColor: "#e9eff6",
+              backgroundColor: "#F3EFE8",
             },
           },
           userButtonPopoverActionButtonIcon: {
-            color: "#4a5b75",
+            color: "#78716C",
           },
         },
       }}

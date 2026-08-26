@@ -87,11 +87,7 @@ def health_score(db: Session, user_id: str, trend: list[MonthlyTrendPoint]) -> H
     score = max(0, min(score, 100))
 
     recommendations: list[str] = []
-    if total_income == 0:
-        recommendations.append(
-            "No income recorded yet — add some transactions to get a real picture."
-        )
-    elif savings_rate < 0:
+    if savings_rate < 0:
         recommendations.append(
             "You're spending more than you're earning this period — "
             "worth a closer look at your top categories."

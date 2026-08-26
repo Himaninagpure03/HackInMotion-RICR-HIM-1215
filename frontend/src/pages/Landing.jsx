@@ -1,12 +1,22 @@
-import { Link } from "react-router-dom";
+import { useEffect, useState } from "react";
+import { Link, Navigate } from "react-router-dom";
 import { SignedIn, SignedOut } from "@clerk/clerk-react";
-import { Navigate } from "react-router-dom";
+import { useApi } from "../lib/api";
 
 export default function Landing() {
+  const api = useApi();
+  const [dest, setDest] = useState(null);
+
+  useEffect(() => {
+    api("/transactions")
+      .then((txns) => setDest(txns.length === 0 ? "/transactions" : "/dashboard"))
+      .catch(() => setDest("/dashboard"));
+  }, []);
+
   return (
     <main className="hero">
       <SignedIn>
-        <Navigate to="/dashboard" replace />
+        {dest ? <Navigate to={dest} replace /> : null}
       </SignedIn>
 
       <SignedOut>
