@@ -4,6 +4,7 @@ import { useAuth, SignIn, SignUp, SignedIn, SignedOut, UserButton } from "@clerk
 import Dashboard from "./pages/Dashboard";
 import Transactions from "./pages/Transactions";
 import Accounts from "./pages/Accounts";
+import Chat from "./pages/Chat";
 import Landing from "./pages/Landing";
 import { useApi } from "./lib/api";
 
@@ -23,6 +24,7 @@ const NAV_LINKS = [
   { to: "/dashboard", label: "Dashboard" },
   { to: "/transactions", label: "Transactions" },
   { to: "/accounts", label: "Accounts" },
+  { to: "/chat", label: "Chat" },
 ];
 
 const ICONS = {
@@ -44,6 +46,11 @@ const ICONS = {
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
       <rect x="2.5" y="5" width="19" height="14" rx="2.5" />
       <path d="M2.5 10h19M6.5 15h3" />
+    </svg>
+  ),
+  chat: (
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" />
     </svg>
   ),
 };
@@ -191,6 +198,14 @@ export default function App() {
             element={
               <Protected>
                 <Accounts />
+              </Protected>
+            }
+          />
+          <Route
+            path="/chat"
+            element={
+              <Protected>
+                <Chat />
               </Protected>
             }
           />

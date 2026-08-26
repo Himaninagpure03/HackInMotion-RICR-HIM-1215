@@ -13,6 +13,14 @@ class Settings(BaseSettings):
     rate_limit_per_minute: int = 120
     upload_rate_limit_per_minute: int = 10
 
+    # LLM settings — Ollama for dev, OpenAI-compatible for production
+    llm_provider: str = "ollama"  # "ollama" | "openai"
+    ollama_base_url: str = "http://localhost:11434"
+    ollama_model: str = "qwen3.5:0.8b"
+    openai_api_key: str | None = None
+    openai_base_url: str = "https://api.openai.com/v1"
+    openai_model: str = "gpt-4o-mini"
+
     model_config = SettingsConfigDict(
         env_file=".env",
         env_file_encoding="utf-8",
